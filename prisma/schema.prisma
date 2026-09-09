@@ -12,6 +12,120 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  CIDADAO
+  FUNCIONARIO
+  ADMIN_LOCAL
+  GLOBAL
+}
+
+enum StatusRequisicao {
+  SOLICITADO
+  APROVADO
+  RECUSADO
+  AGUARDANDO_RETIRADA
+  AGENDADO_PLANTIO
+  CONCLUIDO
+}
+
+enum TipoAtendimento {
+  RETIRADA_LOCAL
+  PLANTIO_AGENDADO
+}
+
 model Usuario {
-  id String @id @db.Uuid
+  id       String  @id @db.Uuid
+  nome     String
+  email    String  @unique
+  telefone String?
+
+  role Role @default(CIDADAO)
+
+  cidadeId String? @db.Uuid
+  cidade   Cidade? @relation(fields: [cidadeId], references: [id])
+
+  requisicoes Requisicao[]
+  historicos  HistoricoRequisicao[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model Cidade {
+  id   String @id @default(uuid()) @db.Uuid
+  nome String
+  uf   String
+
+  usuarios    Usuario[]
+  requisicoes Requisicao[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model Arvore {
+  id String @id @default(uuid()) @db.Uuid
+
+  nomePopular    String
+  nomeCientifico String?
+  descricao      String?
+  imagemUrl      String?
+
+  quantidade Int @default(0)
+  ativa      Boolean @default(true)
+
+  requisicoes Requisicao[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model Requisicao {
+  id String @id @default(uuid()) @db.Uuid
+
+  cidadaoId String @db.Uuid
+  cidadao   Usuario @relation(fields: [cidadaoId], references: [id])
+
+  cidadeId String @db.Uuid
+  cidade   Cidade @relation(fields: [cidadeId], references: [id])
+
+  arvoreId String @db.Uuid
+  arvore   Arvore @relation(fields: [arvoreId], references: [id])
+
+  status StatusRequisicao @default(SOLICITADO)
+
+  tipoAtendimento TipoAtendimento
+
+  rua             String
+  numero          String
+  bairro          String
+  cidadeEndereco  String
+  cep             String
+  estado          String
+  pontoReferencia String?
+
+  fotoLocalUrl             String?
+  comprovanteResidenciaUrl String?
+
+  historico HistoricoRequisicao[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model HistoricoRequisicao {
+  id String @id @default(uuid()) @db.Uuid
+
+  requisicaoId String @db.Uuid
+  requisicao   Requisicao @relation(fields: [requisicaoId], references: [id])
+
+  usuarioId String @db.Uuid
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  statusAnterior StatusRequisicao?
+  statusNovo     StatusRequisicao
+
+  observacao String?
+
+  criadoEm DateTime @default(now())
 }
