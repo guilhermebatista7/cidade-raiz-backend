@@ -67,7 +67,6 @@ model Arvore {
   id String @id @default(uuid()) @db.Uuid
 
   nomePopular    String
-  nomeCientifico String?
   descricao      String?
   imagemUrl      String?
 
