@@ -1,6 +1,16 @@
 import type { Request, Response } from "express";
-import { cadastroSchema } from "../schemas/auth.schema.js";
-import { autenticarUsuario, cadastrarUsuario } from "../services/auth.service.js";
+import { cadastroSchema, loginSchema } from "../schemas/auth.schema.js";
+import { autenticarUsuario, cadastrarUsuario, obterUsuarioPorToken } from "../services/auth.service.js";
+
+// Helper para extrair o cookie mesmo sem a lib cookie-parser
+function extrairTokenCookie(req: Request): string | null {
+  const cookieHeader = req.headers.cookie;
+  if (!cookieHeader) return null;
+  const match = cookieHeader.split("; ").find(c => c.startsWith("token="));
+  const token = match?.split("=")[1];
+  return token || null;
+}
+
 
 export async function cadastrar(
   req: Request,
@@ -35,33 +45,67 @@ export async function cadastrar(
 
 
 export async function login(
-    req: Request,
-    res: Response
+  req: Request,
+  res: Response
 ) {
-    //verifica se são dados válidos com zod (em schemas)
-    const dados = cadastroSchema.safeParse(req.body);
+  //verifica se são dados válidos com zod (em schemas)
+  const dados = loginSchema.safeParse(req.body);
 
-    if (!dados.success) {
-      //Bad request (400)
-        return res.status(400).json({
-            message: "Dados inválidos",
-            errors: dados.error.flatten()
-        });
-    }
+  if (!dados.success) {
+    //Bad request (400)
+    return res.status(400).json({
+      message: "Dados inválidos",
+      errors: dados.error.flatten()
+    });
+  }
 
-    try {
-        const resultado = await autenticarUsuario(
-            dados.data.email,
-            dados.data.senha
-        );
+  try {
+    const resultado = await autenticarUsuario(
+      dados.data.email,
+      dados.data.senha
+    );
 
-        //Success(200)
-        return res.status(200).json(resultado);
+    // Grava o cookie httpOnly seguro no navegador
+    res.cookie("token", resultado.session?.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // HTTPS em produção
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 dias
+    });
 
-    } catch (error) {
-      //Erro interno servidor (401)
-        return res.status(401).json({
-            message: "Email ou senha incorretos"
-        });
-    }
+    //Success(200)
+    return res.status(200).json({ usuario: resultado.usuario });
+
+  } catch (error: any) {
+    console.error("ERRO NO LOGIN:", error);
+    return res.status(401).json({
+      message: error?.message || "Email ou senha incorretos"
+    });
+  }
+}
+
+// Retorna o usuário logado com base no cookie enviado
+export async function me(req: Request, res: Response){
+  const token = extrairTokenCookie(req);
+
+  if(!token){
+    return res.status(401).json({message: "Não autenticado"})
+  }
+
+  try {
+    const usuario = await obterUsuarioPorToken(token);
+    return res.status(200).json({ usuario });
+  } catch (error) {
+    return res.status(401).json({ message: "Sessão inválida" })
+  }
+}
+
+//Faz logout limpando cookie
+export async function logout(req: Request, res: Response){
+  res.clearCookie("token", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production"
+  })
+  return res.status(200).json({ message: "Logout realizado com sucesso"});
 }

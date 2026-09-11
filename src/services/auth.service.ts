@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase.js";
 import { prisma } from "../lib/prisma.js";
+import { email } from "zod";
 
 export async function cadastrarUsuario(
     nome: string,
@@ -73,4 +74,29 @@ export async function autenticarUsuario(
         }
     }
 
+}
+
+export async function obterUsuarioPorToken(token: string){
+    const { data : {user}, error} = await supabase.auth.getUser(token);
+
+    if(error || !user){
+        throw new Error("Sessão inválida ou expirada");
+    }
+
+    const usuario = await prisma.usuario.findUnique({
+        where: {id: user.id}
+    })
+
+    if(!usuario){
+        throw new Error("Usuário não encontrado")
+    }
+
+    return{
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        telefone: usuario.telefone,
+        role: usuario.role,
+        cidadeId: usuario.cidadeId
+    };
 }
