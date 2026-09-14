@@ -1,6 +1,5 @@
 import { supabase } from "../lib/supabase.js";
 import { prisma } from "../lib/prisma.js";
-import { email } from "zod";
 
 export async function cadastrarUsuario(
     nome: string,
