@@ -1,4 +1,4 @@
-import { empty } from "@prisma/client/runtime/client";
+import { string } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { supabase } from "../lib/supabase.js";
 
@@ -17,7 +17,7 @@ async function uploadImagemSupabase(file: ArquivoMulter): Promise<string> {
   const filePath = `arvores/${fileName}`;
 
   const { error: uploadError } = await supabase.storage
-    .from('box')
+    .from('public_box')
     .upload(filePath, file.buffer, {
       contentType: file.mimetype,
       upsert: false,
@@ -28,7 +28,7 @@ async function uploadImagemSupabase(file: ArquivoMulter): Promise<string> {
   }
 
   const { data: publicUrlData } = supabase.storage
-    .from('publico')
+    .from('public_box')
     .getPublicUrl(filePath);
 
   return publicUrlData.publicUrl;
@@ -66,6 +66,11 @@ export async function atualizarArvoreService(id: string, dados: { nome: string; 
   let imagemUrl = arvoreExistente.imagemUrl;
 
   if (file) {
+
+    if (arvoreExistente.imagemUrl) {
+      await excluirImagemSupabase(arvoreExistente.imagemUrl);
+    }
+
     imagemUrl = await uploadImagemSupabase(file);
   }
 
@@ -80,10 +85,49 @@ export async function atualizarArvoreService(id: string, dados: { nome: string; 
   });
 }
 
+async function excluirImagemSupabase(imagemUrl: string){
+  try {
+    const url = new URL(imagemUrl);
+    const prefixo = `storage/v1/object/public/public_box/`;
+
+    if(!url.pathname.includes(prefixo)){
+      console.warn("URL da imagem não pertence ao bucket esperado:", imagemUrl);
+      return;
+    }
+
+    const filePath = decodeURIComponent(
+      url.pathname.split(prefixo)[1] ?? ''
+    );
+
+    if (!filePath) {
+      return;
+    }
+
+    const { error } = await supabase.storage
+      .from('public_box')
+      .remove([filePath]);
+
+    if (error) {
+      throw new Error(
+        `Erro ao excluir imagem do Storage: ${error.message}`
+      );
+    }
+  } catch (error) {
+    console.error("Erro ao excluir imagem antiga:", error);
+    throw error;
+  }
+}
+
 export async function excluirArvoreService(id: string) {
   const arvoreExistente = await prisma.arvore.findUnique({ where: { id } });
+
   if (!arvoreExistente) {
     throw new Error("Árvore não encontrada");
+  }
+
+  // Remove a imagem do Storage
+  if (arvoreExistente.imagemUrl) {
+    await excluirImagemSupabase(arvoreExistente.imagemUrl);
   }
 
   return await prisma.arvore.delete({
