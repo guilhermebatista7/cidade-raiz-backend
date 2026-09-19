@@ -11,7 +11,6 @@ function extrairTokenCookie(req: Request): string | null {
   return token || null;
 }
 
-
 export async function cadastrar(
   req: Request,
   res: Response
@@ -68,7 +67,7 @@ export async function login(
     // Grava o cookie httpOnly seguro no navegador
     res.cookie("token", resultado.session?.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // HTTPS em produção
+      secure: process.env.NODE_ENV === "production", // Só envia cookie em https em produção
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 dias
     });
@@ -79,7 +78,7 @@ export async function login(
   } catch (error: any) {
     console.error("ERRO NO LOGIN:", error);
     return res.status(401).json({
-      message: error?.message || "Email ou senha incorretos"
+      message: "Email ou senha incorretos"
     });
   }
 }

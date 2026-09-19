@@ -58,6 +58,7 @@ model Cidade {
 
   usuarios    Usuario[]
   requisicoes Requisicao[]
+  arvores Arvore[]
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -65,6 +66,9 @@ model Cidade {
 
 model Arvore {
   id String @id @default(uuid()) @db.Uuid
+
+  cidadeId String? @db.Uuid
+  cidade   Cidade? @relation(fields: [cidadeId], references: [id])
 
   nomePopular    String
   descricao      String?
