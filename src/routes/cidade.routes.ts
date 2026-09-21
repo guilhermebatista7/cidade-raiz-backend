@@ -1,0 +1,20 @@
+import { atualizarCidade, criarCidade, listarCidades } from "../controllers/cidade.controller.js";
+import { Role } from "../generated/prisma/enums.js";
+import { verificarRole } from "../middlewares/auth.middlewares.js";
+import router from "./auth.routes.js";
+
+router.get("/", listarCidades);
+
+router.post(
+  "/", 
+  verificarRole([Role.GLOBAL]),  
+  criarCidade
+);
+
+router.put(
+    "/:id",
+    verificarRole([Role.GLOBAL]),
+    atualizarCidade
+)
+
+export default router;
