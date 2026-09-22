@@ -1,9 +1,36 @@
+import { Role } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/prisma.js";
 
-export async function listarCidadesService() {
-  return await prisma.cidade.findMany({
-    orderBy: { criadoEm: 'desc' }
+export async function listarCidadesService(usuario: {role: Role; cidadeId: string | null}) {
+  if (usuario.role === Role.GLOBAL) {
+    return await prisma.cidade.findMany({
+      orderBy: {
+        criadoEm: "desc"
+      }
+    });
+  }
+
+  if (!usuario.cidadeId) {
+    return [];
+  }
+
+  return await prisma.cidade.findUnique({
+    where: {
+      id: usuario.cidadeId
+    },
   });
+}
+
+//método usado por usuários comuns
+export async function listarCidadesAtivasService(){
+  return await prisma.cidade.findMany({
+    where: {
+      ativa: true
+    },
+    orderBy: {
+      criadoEm: "desc"
+    }
+  })
 }
 
 export async function criarCidadeService(dados: { nome: string; uf: string;}) {

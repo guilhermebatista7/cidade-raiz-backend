@@ -44,6 +44,8 @@ model Usuario {
   cidadeId String? @db.Uuid
   cidade   Cidade? @relation(fields: [cidadeId], references: [id])
 
+  ativo      Boolean @default(true)
+
   requisicoes Requisicao[]
   historicos  HistoricoRequisicao[]
 
