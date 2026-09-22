@@ -1,10 +1,10 @@
 import type { Request, Response } from "express";
 import { arvoreSchema } from "../schemas/arvore.schema.js";
-import { 
-  listarArvoresService, 
-  criarArvoreService, 
-  atualizarArvoreService, 
-  excluirArvoreService 
+import {
+  listarArvoresService,
+  criarArvoreService,
+  atualizarArvoreService,
+  excluirArvoreService
 } from "../services/arvore.service.js";
 
 export async function listarArvores(req: Request, res: Response) {

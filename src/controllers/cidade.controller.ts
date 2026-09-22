@@ -1,16 +1,15 @@
 import type { Request, Response } from "express";
-import { atualizarCidadeService, criarCidadeService, listarCidadesService } from "../services/cidade.service.js";
+import { ativarCidadeService, atualizarCidadeService, criarCidadeService, desativarCidadeService, listarCidadesService } from "../services/cidade.service.js";
 import { cidadeSchema } from "../schemas/cidade.schema.js";
 
-export async function listarCidades(req: Request, res: Response){
-    try {
-        const cidades = await listarCidadesService();
-        return res.status(200).json(cidades);
-    } catch (error) {
-        console.log('Erro ao listar cidades', error);
-        return res.status(500).json({message: "Erro ao listar cidades"});
-
-    }
+export async function listarCidades(req: Request, res: Response) {
+  try {
+    const cidades = await listarCidadesService();
+    return res.status(200).json(cidades);
+  } catch (error) {
+    console.log('Erro ao listar cidades', error);
+    return res.status(500).json({ message: "Erro ao listar cidades" });
+  }
 }
 
 export async function criarCidade(req: Request, res: Response) {
@@ -48,10 +47,40 @@ export async function atualizarCidade(req: Request, res: Response) {
   }
 
   try {
-    const arvoreAtualizada = await atualizarCidadeService(id, validacao.data);
-    return res.status(200).json(arvoreAtualizada);
+    const cidadeAtualizada = await atualizarCidadeService(id, validacao.data);
+    return res.status(200).json(cidadeAtualizada);
   } catch (error: any) {
     console.error("ERRO AO ATUALIZAR CIDADE:", error);
     return res.status(500).json({ message: error.message || "Erro ao atualizar cidade" });
+  }
+}
+
+export async function ativarCidade(req: Request, res: Response) {
+  const { id } = req.params;
+
+  if (typeof id !== "string") {
+    return res.status(400).json({ message: "ID inválido" });
+  }
+
+  try {
+    const cidadeAtivada = await ativarCidadeService(id);
+    return res.status(200).json(cidadeAtivada)
+  } catch (error) {
+    return res.status(500).json({ message: "Erro ao ativar cidade" })
+  }
+}
+
+export async function desativarCidade(req: Request, res: Response) {
+  const { id } = req.params;
+
+  if (typeof id !== "string") {
+    return res.status(400).json({ message: "ID inválido" });
+  }
+
+  try {
+    const cidadeDesativada = await desativarCidadeService(id);
+    return res.status(200).json(cidadeDesativada)
+  } catch (error) {
+    return res.status(500).json({ message: "Erro ao desativar cidade" })
   }
 }

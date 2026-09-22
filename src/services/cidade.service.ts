@@ -18,8 +18,8 @@ export async function criarCidadeService(dados: { nome: string; uf: string;}) {
 }
 
 export async function atualizarCidadeService(id: string, dados: { nome: string; uf: string; }) {
-  const arvoreExistente = await prisma.cidade.findUnique({ where: { id } });
-  if (!arvoreExistente) {
+  const cidadeExistente = await prisma.cidade.findUnique({ where: { id } });
+  if (!cidadeExistente) {
     throw new Error("Cidade não encontrada");
   }
 
@@ -28,6 +28,34 @@ export async function atualizarCidadeService(id: string, dados: { nome: string; 
     data: {
       nome: dados.nome,
       uf: dados.uf
+    }
+  });
+}
+
+export async function desativarCidadeService(id: string){
+  const cidadeExistente = await prisma.cidade.findUnique({where: {id}});
+  if(!cidadeExistente){
+    throw new Error("Cidade não encontrada");
+  }
+
+  return await prisma.cidade.update({
+    where: {id},
+    data: {
+      ativa: false,
+    }
+  });
+}
+
+export async function ativarCidadeService(id: string){
+  const cidadeExistente = await prisma.cidade.findUnique({where: {id}});
+  if(!cidadeExistente){
+    throw new Error("Cidade não encontrada");
+  }
+
+  return await prisma.cidade.update({
+    where: {id},
+    data: {
+      ativa: true,
     }
   });
 }
