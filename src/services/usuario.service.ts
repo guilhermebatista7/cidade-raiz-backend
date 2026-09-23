@@ -1,4 +1,6 @@
+import type { Request, Response } from "express";
 import { Role } from "../generated/prisma/enums.js";
+import { prisma } from "../lib/prisma.js";
 
 export async function listarRolesService(usuario: { role: Role }) {
   if (usuario.role === Role.GLOBAL) {
@@ -10,4 +12,105 @@ export async function listarRolesService(usuario: { role: Role }) {
   }
 
   return [];
+}
+
+export async function listarUsuariosService(usuarioLogado: {role: Role, cidadeId: string | null}){
+
+  const include = {
+    cidade: {
+      select: {
+        id: true,
+        nome: true,
+        uf: true,
+      },
+    },
+  };
+
+  if(usuarioLogado.role === Role.GLOBAL){
+    return await prisma.usuario.findMany({
+      orderBy: {
+        criadoEm: 'desc'
+      },
+      include,
+    })
+  }
+
+  if(usuarioLogado.role === Role.ADMIN_LOCAL){
+    const cidadeId = usuarioLogado.cidadeId
+    return await prisma.usuario.findMany({
+      where: { cidadeId },
+      orderBy: {
+        criadoEm: 'desc'
+      },
+      include,
+    })
+  }
+
+  return [];
+}
+
+export async function atualizarUsuarioService(usuarioLogado: Request['usuario'], id:string, dados: { nome: string, email: string, role: Role, telefone?: string, cidadeId?: string} ){
+  if(!usuarioLogado){
+    throw new Error("Usuário não autenticado");
+  }
+
+  if(usuarioLogado.role !== Role.GLOBAL && dados.role !== Role.FUNCIONARIO){
+    throw new Error("Ação não permitida");
+  }
+
+  return await prisma.usuario.update({
+    where:{ id },
+    data:{
+      nome: dados.nome,
+      email: dados.email,
+      role: dados.role,
+      telefone: dados.telefone || '',
+      cidadeId: dados.cidadeId || null,
+    }
+  })
+}
+
+
+export async function desativarUsuarioService(usuarioLogado: Request['usuario'], id: string){
+
+  if(!usuarioLogado){
+    throw new Error("Usuário não autenticado");
+  }
+
+  const usuarioExistente = await prisma.usuario.findUnique({where: {id}});
+
+  if(!usuarioExistente){
+    throw new Error("Usuário não encontrado");
+  }
+
+  if(usuarioLogado.role !== Role.GLOBAL && usuarioExistente.role !== Role.FUNCIONARIO){
+    throw new Error("Ação não permitida");
+  }
+
+  return await prisma.usuario.update({
+    where: {id},
+    data: {
+      ativo: false,
+    }
+  });
+}
+
+export async function ativarUsuarioService(usuarioLogado: Request['usuario'], id: string){
+
+  if(!usuarioLogado){
+    throw new Error("Usuário não autenticado");
+  }
+
+  const usuarioExistente = await prisma.usuario.findUnique({where: {id}});
+
+  if(!usuarioExistente){
+    throw new Error("Uusário não encontrado");
+  }
+
+  return await prisma.usuario.update({
+    where: {id},
+    data: {
+      ativo: true,
+    }
+  });
 }

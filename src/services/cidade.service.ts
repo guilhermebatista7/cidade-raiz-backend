@@ -2,11 +2,23 @@ import { Role } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/prisma.js";
 
 export async function listarCidadesService(usuario: {role: Role; cidadeId: string | null}) {
+
+  const includeCount = {
+    _count: {
+      select: {
+        usuarios: true,
+        requisicoes: true,
+        arvores: true,
+      },
+    },
+  };
+
   if (usuario.role === Role.GLOBAL) {
     return await prisma.cidade.findMany({
       orderBy: {
         criadoEm: "desc"
-      }
+      },
+      include: includeCount,
     });
   }
 
@@ -18,6 +30,7 @@ export async function listarCidadesService(usuario: {role: Role; cidadeId: strin
     where: {
       id: usuario.cidadeId
     },
+    include: includeCount,
   });
 }
 

@@ -1,11 +1,13 @@
 import { ativarCidade, atualizarCidade, criarCidade, desativarCidade, listarCidades, listarCidadesAtivas } from "../controllers/cidade.controller.js";
 import { Role } from "../generated/prisma/enums.js";
 import { verificarRole } from "../middlewares/auth.middlewares.js";
-import router from "./auth.routes.js";
+import { Router } from "express";
+
+const router = Router();
 
 router.get(
   "/", 
-  verificarRole([Role.GLOBAL]), 
+  verificarRole([Role.GLOBAL, Role.ADMIN_LOCAL]), 
   listarCidades
 );
 
