@@ -34,10 +34,11 @@ export async function cadastrar(
     return res.status(201).json(resultado);
 
   } catch (error) {
-    console.error("ERRO AO CADASTRAR USUÁRIO:", error);
 
     return res.status(500).json({
-      message: "Erro ao cadastrar usuário"
+      message: error instanceof Error
+        ? error.message
+        : "Erro interno do servidor"
     });
   }
 }
@@ -84,27 +85,27 @@ export async function login(
 }
 
 // Retorna o usuário logado com base no cookie enviado
-export async function me(req: Request, res: Response){
+export async function me(req: Request, res: Response) {
   const token = extrairTokenCookie(req);
 
-  if(!token){
-    return res.status(401).json({message: "Não autenticado"})
+  if (!token) {
+    return res.status(401).json({ message: "Não autenticado" })
   }
 
   try {
     const usuario = await obterUsuarioPorToken(token);
     return res.status(200).json({ usuario });
   } catch (error) {
-    return res.status(401).json({ message: "Sessão inválida" })
+    return res.status(401).json({ message: "Sessão inválida. É necessário fazer login!" })
   }
 }
 
 //Faz logout limpando cookie
-export async function logout(req: Request, res: Response){
+export async function logout(req: Request, res: Response) {
   res.clearCookie("token", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production"
   })
-  return res.status(200).json({ message: "Logout realizado com sucesso"});
+  return res.status(200).json({ message: "Logout realizado com sucesso" });
 }

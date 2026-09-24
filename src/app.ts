@@ -6,6 +6,8 @@ import router from './routes/auth.routes.js';
 import arvoreRouter from './routes/arvore.routes.js';
 import cidadeRouter from './routes/cidade.routes.js';
 import usuarioRouter from './routes/usuario.routes.js';
+import requisicaoRouter from './routes/requisicao.routes.js';
+
 
 const app = express();
 
@@ -23,5 +25,6 @@ app.use("/api/auth", router);
 app.use("/api/arvores", arvoreRouter);
 app.use("/api/cidades", cidadeRouter);
 app.use("/api/usuario", usuarioRouter);
+app.use("/api/requisicao", requisicaoRouter);
 
 export default app;

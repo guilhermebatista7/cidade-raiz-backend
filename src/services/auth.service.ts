@@ -6,6 +6,14 @@ export async function cadastrarUsuario(
     email: string,
     senha: string
 ) {
+    const emailExistente = await prisma.usuario.findUnique({
+        where: {email: email.toLowerCase()}
+    })
+    
+    if (emailExistente) {
+        throw new Error("Este e-mail já está cadastrado.");
+    }
+
     const { data, error } = await supabase.auth.signUp({
         email,
         password: senha

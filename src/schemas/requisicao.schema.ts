@@ -1,0 +1,22 @@
+import z from "zod";
+import { TipoAtendimento } from "../generated/prisma/enums.js";
+
+export const requisicaoSchema = z.object({
+    cidadaoId: z.string(),
+    cidadeId: z.string(),
+    arvoreId: z.string(),
+    tipoAtendimento: z
+        .enum(["retirar", "agendar"])
+        .transform((valor) =>
+            valor === "retirar"
+                ? TipoAtendimento.RETIRADA_LOCAL
+                : TipoAtendimento.PLANTIO_AGENDADO
+        ),
+     rua: z.string().min(1, "A rua é obrigatória"),
+    numero: z.string().min(1, "O número é obrigatório"),
+    bairro: z.string().min(1, "O bairro é obrigatório"),
+    cidadeEndereco: z.string().min(1, "A cidade é obrigatória"),
+    cep: z.string().min(8, "CEP inválido"),
+    estado: z.string().length(2, "O estado deve possuir 2 caracteres"),
+    pontoReferencia: z.string().optional(),
+})
