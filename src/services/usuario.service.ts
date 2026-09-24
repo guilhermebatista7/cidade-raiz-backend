@@ -58,6 +58,10 @@ export async function atualizarUsuarioService(usuarioLogado: Request['usuario'],
     throw new Error("Ação não permitida");
   }
 
+  if(usuarioLogado.role === Role.ADMIN_LOCAL && usuarioLogado.cidadeId !== dados.cidadeId){
+    throw new Error("Cidade inválida");
+  }
+
   return await prisma.usuario.update({
     where:{ id },
     data:{
