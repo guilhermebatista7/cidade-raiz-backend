@@ -22,8 +22,32 @@ export async function listarCidadesService(usuario: {role: Role; cidadeId: strin
     });
   }
 
+  return [];
+}
+
+export async function listarCidadesUsuarioService(usuario: {role: Role; cidadeId: string | null}) {
+
+  const includeCount = {
+    _count: {
+      select: {
+        usuarios: true,
+        requisicoes: true,
+        arvores: true,
+      },
+    },
+  };
+
   if (!usuario.cidadeId) {
     return [];
+  }
+
+  if (usuario.role === Role.GLOBAL) {
+    return await prisma.cidade.findMany({
+      orderBy: {
+        criadoEm: "desc"
+      },
+      include: includeCount,
+    });
   }
 
   return await prisma.cidade.findUnique({

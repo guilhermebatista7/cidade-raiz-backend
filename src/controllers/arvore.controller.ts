@@ -9,7 +9,12 @@ import {
 
 export async function listarArvores(req: Request, res: Response) {
   try {
-    const arvores = await listarArvoresService();
+    if (!req.usuario) {
+      return res.status(401).json({
+        message: "Usuário não autenticado."
+      });
+    }
+    const arvores = await listarArvoresService(req.usuario);
     return res.status(200).json(arvores);
   } catch (error: any) {
     console.error("ERRO AO LISTAR ÁRVORES:", error);

@@ -1,6 +1,7 @@
 import { string } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { supabase } from "../lib/supabase.js";
+import { Role } from "../generated/prisma/enums.js";
 
 // Tipo local para o arquivo do Multer
 interface ArquivoMulter {
@@ -34,13 +35,26 @@ async function uploadImagemSupabase(file: ArquivoMulter): Promise<string> {
   return publicUrlData.publicUrl;
 }
 
-export async function listarArvoresService() {
-  return await prisma.arvore.findMany({
-    orderBy: { criadoEm: 'desc' }
-  });
+export async function listarArvoresService(usuarioLogado : {role: Role, cidadeId: string | null}) {
+  if(usuarioLogado.role === Role.GLOBAL){
+    return await prisma.arvore.findMany({
+      orderBy: { criadoEm: 'desc' }
+    });
+  }
+
+  if(usuarioLogado.role === Role.ADMIN_LOCAL || usuarioLogado.role === Role.FUNCIONARIO){
+    const cidadeId = usuarioLogado.cidadeId
+    return await prisma.arvore.findMany({
+      where: { cidadeId },
+      orderBy: { criadoEm: 'desc' }
+    })
+  }
+
+  //montar select com id da cidade escolhida na solicitação do cidadao e verificar role do cidadao
+  return [];
 }
 
-export async function criarArvoreService(dados: { nome: string; descricao?: string; quantidade: number }, file?: ArquivoMulter) {
+export async function criarArvoreService(dados: { nome: string; descricao?: string; quantidade: number, cidadeId: string }, file?: ArquivoMulter) {
   let imagemUrl: string | null = null;
 
   if (file) {
@@ -52,12 +66,13 @@ export async function criarArvoreService(dados: { nome: string; descricao?: stri
       nomePopular: dados.nome,
       descricao: dados.descricao ?? null, // Converte undefined para null
       quantidade: dados.quantidade,
+      cidadeId: dados.cidadeId,
       imagemUrl: imagemUrl,
     }
   });
 }
 
-export async function atualizarArvoreService(id: string, dados: { nome: string; descricao?: string; quantidade: number }, file?: ArquivoMulter) {
+export async function atualizarArvoreService(id: string, dados: { nome: string; descricao?: string; quantidade: number; cidadeId: string }, file?: ArquivoMulter) {
   const arvoreExistente = await prisma.arvore.findUnique({ where: { id } });
   if (!arvoreExistente) {
     throw new Error("Árvore não encontrada");
@@ -80,6 +95,7 @@ export async function atualizarArvoreService(id: string, dados: { nome: string; 
       nomePopular: dados.nome,
       descricao: dados.descricao ?? null, // Converte undefined para null
       quantidade: dados.quantidade,
+      cidadeId: dados.cidadeId,
       imagemUrl: imagemUrl,
     }
   });

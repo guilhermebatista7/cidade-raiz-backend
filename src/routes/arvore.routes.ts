@@ -12,7 +12,13 @@ import { Role } from "../generated/prisma/enums.js";
 const upload = multer({ storage: multer.memoryStorage() });
 const router = Router();
 
-router.get("/", listarArvores);
+//Passamos todos os Roles pq vamos validar la dentro conforme o tipo e precisamos do retorno dos dados de quem faz a solicitação na rota
+router.get(
+  "/",
+  verificarRole([Role.GLOBAL, Role.ADMIN_LOCAL, Role.FUNCIONARIO, Role.CIDADAO]),
+  listarArvores
+);
+
 router.post(
   "/", 
   verificarRole([Role.FUNCIONARIO, Role.ADMIN_LOCAL, Role.GLOBAL]), 
