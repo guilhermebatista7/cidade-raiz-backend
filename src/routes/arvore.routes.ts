@@ -4,7 +4,8 @@ import {
   listarArvores, 
   criarArvore, 
   atualizarArvore, 
-  excluirArvore 
+  excluirArvore, 
+  listarArvoresCidade
 } from "../controllers/arvore.controller.js";
 import { verificarRole } from "../middlewares/auth.middlewares.js";
 import { Role } from "../generated/prisma/enums.js";
@@ -15,8 +16,14 @@ const router = Router();
 //Passamos todos os Roles pq vamos validar la dentro conforme o tipo e precisamos do retorno dos dados de quem faz a solicitação na rota
 router.get(
   "/",
-  verificarRole([Role.GLOBAL, Role.ADMIN_LOCAL, Role.FUNCIONARIO, Role.CIDADAO]),
+  verificarRole([Role.GLOBAL, Role.ADMIN_LOCAL, Role.FUNCIONARIO]),
   listarArvores
+);
+
+//Busca as árvores com base no id da cidade
+router.get(
+  "/cidade/:id",
+  listarArvoresCidade
 );
 
 router.post(

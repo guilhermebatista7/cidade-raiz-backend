@@ -50,9 +50,19 @@ export async function listarArvoresService(usuarioLogado : {role: Role, cidadeId
     })
   }
 
-  //montar select com id da cidade escolhida na solicitação do cidadao e verificar role do cidadao
   return [];
 }
+
+export async function listarArvoresCidadeService(cidadeId: string) {
+
+  return await prisma.arvore.findMany({
+    // JS permite abreviar quando chave e variável tem o mesmo nome (não necessário cidadeId: cidadeId)
+    where: { cidadeId },
+    orderBy: { criadoEm: 'desc'}
+  });
+}
+
+
 
 export async function criarArvoreService(dados: { nome: string; descricao?: string; quantidade: number, cidadeId: string }, file?: ArquivoMulter) {
   let imagemUrl: string | null = null;

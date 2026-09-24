@@ -4,7 +4,8 @@ import {
   listarArvoresService,
   criarArvoreService,
   atualizarArvoreService,
-  excluirArvoreService
+  excluirArvoreService,
+  listarArvoresCidadeService
 } from "../services/arvore.service.js";
 
 export async function listarArvores(req: Request, res: Response) {
@@ -15,6 +16,21 @@ export async function listarArvores(req: Request, res: Response) {
       });
     }
     const arvores = await listarArvoresService(req.usuario);
+    return res.status(200).json(arvores);
+  } catch (error: any) {
+    console.error("ERRO AO LISTAR ÁRVORES:", error);
+    return res.status(500).json({ message: "Erro ao listar árvores" });
+  }
+}
+
+export async function listarArvoresCidade(req: Request, res: Response) {
+  const { id } = req.params;
+  if (typeof id !== "string") {
+    return res.status(400).json({ message: "ID inválido" });
+  }
+
+  try {
+    const arvores = await listarArvoresCidadeService(id);
     return res.status(200).json(arvores);
   } catch (error: any) {
     console.error("ERRO AO LISTAR ÁRVORES:", error);
