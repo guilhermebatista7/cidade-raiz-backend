@@ -37,10 +37,7 @@ export async function listarCidadesUsuarioService(usuario: {role: Role; cidadeId
     },
   };
 
-  if (!usuario.cidadeId) {
-    return [];
-  }
-
+  
   if (usuario.role === Role.GLOBAL) {
     return await prisma.cidade.findMany({
       orderBy: {
@@ -49,7 +46,11 @@ export async function listarCidadesUsuarioService(usuario: {role: Role; cidadeId
       include: includeCount,
     });
   }
-
+  
+  if (!usuario.cidadeId) {
+    return [];
+  }
+  
   return await prisma.cidade.findUnique({
     where: {
       id: usuario.cidadeId

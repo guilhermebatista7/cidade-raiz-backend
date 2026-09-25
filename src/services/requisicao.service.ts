@@ -1,4 +1,5 @@
-import type { TipoAtendimento } from "../generated/prisma/enums.js";
+import type { Usuario } from "../generated/prisma/client.js";
+import { Role, type TipoAtendimento } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/prisma.js";
 import {
   uploadArquivoSupabase,
@@ -70,4 +71,48 @@ export async function criarRequisicaoService(
       comprovanteResidenciaUrl: comprovanteResidenciaPath,
     },
   });
+}
+
+export const listarReqService = async (usuarioLogado: { id: string, cidadeId: string | null, role: Role, email: string }) => {
+
+  const include = {
+    cidade: {
+      select: {
+        id: true,
+        nome: true,
+        uf: true,
+      },
+    },
+    cidadao: {
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+      }
+    },
+    arvore: {
+      select: {
+        id: true,
+        nomePopular: true,
+      },
+    },
+  };
+
+  if (usuarioLogado.role === Role.ADMIN_LOCAL || usuarioLogado.role === Role.FUNCIONARIO) {
+
+    if (!usuarioLogado.cidadeId) {
+      throw new Error("Cidade não encontrada");
+    }
+
+    const cidadeId = usuarioLogado.cidadeId
+    return await prisma.requisicao.findMany({
+      where: { cidadeId },
+      orderBy: {
+        criadoEm: 'desc'
+      },
+      include,
+    })
+  }
+
+  return [];
 }

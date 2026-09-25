@@ -44,7 +44,7 @@ model Usuario {
   cidadeId String? @db.Uuid
   cidade   Cidade? @relation(fields: [cidadeId], references: [id])
 
-  ativo      Boolean @default(true)
+  ativo Boolean @default(true)
 
   requisicoes Requisicao[]
   historicos  HistoricoRequisicao[]
@@ -60,11 +60,11 @@ model Cidade {
 
   usuarios    Usuario[]
   requisicoes Requisicao[]
-  arvores Arvore[]
+  arvores     Arvore[]
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
-  ativa Boolean
+  ativa        Boolean
 }
 
 model Arvore {
@@ -73,11 +73,11 @@ model Arvore {
   cidadeId String? @db.Uuid
   cidade   Cidade? @relation(fields: [cidadeId], references: [id])
 
-  nomePopular    String
-  descricao      String?
-  imagemUrl      String?
+  nomePopular String
+  descricao   String?
+  imagemUrl   String?
 
-  quantidade Int @default(0)
+  quantidade Int     @default(0)
   ativa      Boolean @default(true)
 
   requisicoes Requisicao[]
@@ -89,8 +89,11 @@ model Arvore {
 model Requisicao {
   id String @id @default(uuid()) @db.Uuid
 
-  cidadaoId String @db.Uuid
-  cidadao   Usuario @relation(fields: [cidadaoId], references: [id])
+  criadoPorId String? @db.Uuid
+  criadoPor   Usuario? @relation(fields: [criadoPorId], references: [id])
+
+  nomeBeneficiario     String?
+  telefoneBeneficiario String?
 
   cidadeId String @db.Uuid
   cidade   Cidade @relation(fields: [cidadeId], references: [id])
@@ -122,10 +125,10 @@ model Requisicao {
 model HistoricoRequisicao {
   id String @id @default(uuid()) @db.Uuid
 
-  requisicaoId String @db.Uuid
+  requisicaoId String     @db.Uuid
   requisicao   Requisicao @relation(fields: [requisicaoId], references: [id])
 
-  usuarioId String @db.Uuid
+  usuarioId String  @db.Uuid
   usuario   Usuario @relation(fields: [usuarioId], references: [id])
 
   statusAnterior StatusRequisicao?

@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { requisicaoSchema } from "../schemas/requisicao.schema.js";
-import { criarRequisicaoService } from "../services/requisicao.service.js";
+import { criarRequisicaoService, listarReqService } from "../services/requisicao.service.js";
 
 
 export async function criarRequisicao(req: Request, res: Response) {
@@ -55,5 +55,19 @@ export async function criarRequisicao(req: Request, res: Response) {
     return res.status(201).json(novaRequisicao);
   } catch (error: any) {
     return res.status(500).json({ message: error.message || "Erro ao criar requisição" });
+  }
+}
+
+export const buscarRequisicoes = async (req: Request, res: Response) => {
+  try {
+    if(!req.usuario){
+      return res.status(401).json({
+        message: "Usuário não autencticado"
+      });
+    }
+    const requisicoes = await listarReqService(req.usuario);
+    return res.status(200).json(requisicoes);
+  } catch (error) {
+    return res.status(500).json({ message: `Erro ao listar requisições ${error}`})
   }
 }

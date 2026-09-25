@@ -20,7 +20,7 @@ export async function listarUsuarios(req: Request, res: Response){
   try {
     if(!req.usuario){
       return res.status(401).json({
-        message: "usuário não autencticado"
+        message: "Usuário não autencticado"
       });
     }
     const usuarios = await listarUsuariosService(req.usuario);
