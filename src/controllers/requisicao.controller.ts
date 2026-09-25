@@ -4,12 +4,23 @@ import { criarRequisicaoService } from "../services/requisicao.service.js";
 
 
 export async function criarRequisicao(req: Request, res: Response) {
+  console.log("BODY RECEBIDO:");
+  console.log(req.body);
+
+  console.log("FILES RECEBIDOS:");
+  console.log(req.files);
+
   const validacao = requisicaoSchema.safeParse(req.body);
 
   if (!validacao.success) {
+    console.log("ERRO ZOD:");
+    console.dir(validacao.error.flatten(), {
+      depth: null,
+    });
+
     return res.status(400).json({
       message: "Dados inválidos",
-      errors: validacao.error.flatten()
+      errors: validacao.error.flatten(),
     });
   }
 
@@ -43,6 +54,6 @@ export async function criarRequisicao(req: Request, res: Response) {
 
     return res.status(201).json(novaRequisicao);
   } catch (error: any) {
-    return res.status(500).json({ message: error.message || "Erro ao criar árvore" });
+    return res.status(500).json({ message: error.message || "Erro ao criar requisição" });
   }
 }

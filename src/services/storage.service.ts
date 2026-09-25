@@ -6,15 +6,18 @@ export interface ArquivoMulter {
   buffer: Buffer;
 }
 
+export interface ArquivoStorage {
+  bucket: string;
+  path: string;
+  publicUrl: string | null;
+}
+
 export async function uploadArquivoSupabase(
   file: ArquivoMulter,
   bucket: string,
-  pasta: string
-): Promise<{
-  bucket: string;
-  path: string;
-  publicUrl: string;
-}> {
+  pasta: string,
+  publico: boolean = false
+): Promise<ArquivoStorage> {
   const fileExt =
     file.originalname.split(".").pop()?.toLowerCase() || "bin";
 
@@ -39,52 +42,63 @@ export async function uploadArquivoSupabase(
     );
   }
 
-  const { data } = supabase.storage
-    .from(bucket)
-    .getPublicUrl(filePath);
+  let publicUrl: string | null = null;
+
+  if (publico) {
+    const { data } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(filePath);
+
+    publicUrl = data.publicUrl;
+  }
 
   return {
     bucket,
     path: filePath,
-    publicUrl: data.publicUrl,
+    publicUrl,
   };
 }
 
 export async function excluirArquivoSupabase(
-  imagemUrl: string
+  bucket: string,
+  filePath: string
 ): Promise<void> {
-  try {
-    const url = new URL(imagemUrl);
+  const { error } = await supabase.storage
+    .from(bucket)
+    .remove([filePath]);
 
-    const prefixo = "storage/v1/object/public/public_box/";
-
-    if (!url.pathname.includes(prefixo)) {
-      console.warn(
-        "URL da imagem não pertence ao bucket esperado:",
-        imagemUrl
-      );
-      return;
-    }
-
-    const filePath = decodeURIComponent(
-      url.pathname.split(prefixo)[1] ?? ""
+  if (error) {
+    throw new Error(
+      `Erro ao excluir arquivo do Storage: ${error.message}`
     );
-
-    if (!filePath) {
-      return;
-    }
-
-    const { error } = await supabase.storage
-      .from("public_box")
-      .remove([filePath]);
-
-    if (error) {
-      throw new Error(
-        `Erro ao excluir imagem do Storage: ${error.message}`
-      );
-    }
-  } catch (error) {
-    console.error("Erro ao excluir imagem antiga:", error);
-    throw error;
   }
+}
+
+export function obterUrlPublica(
+  bucket: string,
+  filePath: string
+): string {
+  const { data } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}
+
+export async function obterUrlAssinada(
+  bucket: string,
+  filePath: string,
+  expiresIn: number = 60
+): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(filePath, expiresIn);
+
+  if (error) {
+    throw new Error(
+      `Erro ao gerar URL assinada: ${error.message}`
+    );
+  }
+
+  return data.signedUrl;
 }

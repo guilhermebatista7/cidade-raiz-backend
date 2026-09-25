@@ -18,7 +18,6 @@ export async function criarRequisicaoService(
     estado: string;
     pontoReferencia?: string | undefined;
     tipoAtendimento: TipoAtendimento;
-
   },
   arquivos: {
     fotoLocal?: ArquivoMulter;
@@ -32,7 +31,8 @@ export async function criarRequisicaoService(
     const foto = await uploadArquivoSupabase(
       arquivos.fotoLocal,
       "public_box",
-      "requisicoes"
+      "locais_plantio",
+      true
     );
 
     fotoLocalPath = foto.path;
@@ -41,8 +41,9 @@ export async function criarRequisicaoService(
   if (arquivos.comprovante) {
     const comprovante = await uploadArquivoSupabase(
       arquivos.comprovante,
+      "box",
       "documentos-sensiveis",
-      "comprovantes-residencia"
+      false
     );
 
     comprovanteResidenciaPath = comprovante.path;
@@ -64,7 +65,6 @@ export async function criarRequisicaoService(
       pontoReferencia: dados.pontoReferencia ?? null,
 
       tipoAtendimento: dados.tipoAtendimento,
-
 
       fotoLocalUrl: fotoLocalPath,
       comprovanteResidenciaUrl: comprovanteResidenciaPath,

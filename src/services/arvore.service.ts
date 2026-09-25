@@ -65,10 +65,11 @@ export async function criarArvoreService(
     const imagem = await uploadArquivoSupabase(
       file,
       "public_box",
-      "arvores"
+      "arvores",
+      true
     );
 
-    imagemUrl = imagem.publicUrl;
+    imagemUrl = imagem.path;
   }
 
   return await prisma.arvore.create({
@@ -102,9 +103,18 @@ export async function atualizarArvoreService(
     throw new Error("Árvore não encontrada");
   }
 
-  let imagemUrl = arvoreExistente.imagemUrl;
+  let imagemPath = arvoreExistente.imagemUrl;
 
   if (file) {
+    const imagem = await uploadArquivoSupabase(
+      file,
+      "public_box",
+      "arvores",
+      true
+    );
+
+    // Primeiro fez upload da nova.
+    // Depois remove a antiga.
     if (arvoreExistente.imagemUrl) {
       await excluirArquivoSupabase(
         "public_box",
@@ -112,13 +122,7 @@ export async function atualizarArvoreService(
       );
     }
 
-    const imagem = await uploadArquivoSupabase(
-      file,
-      "public_box",
-      "arvores"
-    );
-
-    imagemUrl = imagem.publicUrl;
+    imagemPath = imagem.path;
   }
 
   return await prisma.arvore.update({
@@ -130,7 +134,7 @@ export async function atualizarArvoreService(
       descricao: dados.descricao ?? null,
       quantidade: dados.quantidade,
       cidadeId: dados.cidadeId,
-      imagemUrl,
+      imagemUrl: imagemPath,
     },
   });
 }
