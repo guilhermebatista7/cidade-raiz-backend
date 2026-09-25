@@ -83,7 +83,7 @@ export const listarReqService = async (usuarioLogado: { id: string, cidadeId: st
         uf: true,
       },
     },
-    cidadao: {
+    criadoPor: {
       select: {
         id: true,
         nome: true,
