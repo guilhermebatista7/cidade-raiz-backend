@@ -2,9 +2,11 @@ import z from "zod";
 import { TipoAtendimento } from "../generated/prisma/enums.js";
 
 export const requisicaoSchema = z.object({
-    cidadaoId: z.string(),
+    criadoPorId: z.string(),
     cidadeId: z.string(),
     arvoreId: z.string(),
+    nomeBeneficiario: z.string(),
+    telefoneBeneficiario: z.string(),
     tipoAtendimento: z
         .enum(["retirar", "agendar"])
         .transform((valor) =>

@@ -8,9 +8,11 @@ import {
 
 export async function criarRequisicaoService(
   dados: {
-    cidadaoId: string;
+    criadoPorId: string;
     cidadeId: string;
     arvoreId: string;
+    nomeBeneficiario: string;
+    telefoneBeneficiario: string;
     rua: string;
     numero: string;
     bairro: string;
@@ -52,9 +54,11 @@ export async function criarRequisicaoService(
 
   return await prisma.requisicao.create({
     data: {
-      cidadaoId: dados.cidadaoId,
+      criadoPorId: dados.criadoPorId,
       cidadeId: dados.cidadeId,
       arvoreId: dados.arvoreId,
+      nomeBeneficiario: dados.nomeBeneficiario,
+      telefoneBeneficiario: dados.telefoneBeneficiario,
 
       rua: dados.rua,
       numero: dados.numero,
