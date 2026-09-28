@@ -102,6 +102,7 @@ model Requisicao {
   arvore   Arvore @relation(fields: [arvoreId], references: [id])
 
   status StatusRequisicao @default(SOLICITADO)
+  observacaoStatus String?
 
   tipoAtendimento TipoAtendimento
 

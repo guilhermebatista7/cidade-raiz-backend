@@ -3,6 +3,8 @@ import { Role, type TipoAtendimento } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/prisma.js";
 import {
   uploadArquivoSupabase,
+  obterUrlPublica,
+  obterUrlAssinada,
   type ArquivoMulter,
 } from "./storage.service.js";
 
@@ -77,6 +79,20 @@ export async function criarRequisicaoService(
   });
 }
 
+async function adicionarUrlsArquivos(requisicao: any) {
+  const fotoLocalUrl = requisicao.fotoLocalUrl ? obterUrlPublica("public_box", requisicao.fotoLocalUrl) : null;
+
+  const comprovanteResidenciaUrl = requisicao.comprovanteResidenciaUrl
+    ? await obterUrlAssinada("box", requisicao.comprovanteResidenciaUrl, 300)
+    : null;
+
+  return {
+    ...requisicao,
+    fotoLocalUrl,
+    comprovanteResidenciaUrl,
+  };
+}
+
 export const listarReqService = async (usuarioLogado: { id: string, cidadeId: string | null, role: Role, email: string }) => {
 
   const include = {
@@ -109,13 +125,62 @@ export const listarReqService = async (usuarioLogado: { id: string, cidadeId: st
     }
 
     const cidadeId = usuarioLogado.cidadeId
-    return await prisma.requisicao.findMany({
+    const requisicoes = await prisma.requisicao.findMany({
       where: { cidadeId },
       orderBy: {
         criadoEm: 'desc'
       },
       include,
-    })
+    });
+
+    return await Promise.all(
+      requisicoes.map(adicionarUrlsArquivos)
+    );
+  }
+
+  return [];
+}
+
+export const listarReqCidadeService = async (cidadeId: string, usuarioLogado: { id: string, cidadeId: string | null, role: Role, email: string }) => {
+
+  const include = {
+    cidade: {
+      select: {
+        id: true,
+        nome: true,
+        uf: true,
+      },
+    },
+    criadoPor: {
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+      }
+    },
+    arvore: {
+      select: {
+        id: true,
+        nomePopular: true,
+      },
+    },
+  };
+
+  if (usuarioLogado.role === Role.GLOBAL) {
+
+    const requisicoes = await prisma.requisicao.findMany({
+      where: {
+        cidadeId: cidadeId,
+      },
+      orderBy: {
+        criadoEm: 'desc'
+      },
+      include,
+    });
+
+    return await Promise.all(
+      requisicoes.map(adicionarUrlsArquivos)
+    );
   }
 
   return [];
