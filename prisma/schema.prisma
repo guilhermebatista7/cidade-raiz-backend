@@ -104,6 +104,9 @@ model Requisicao {
   status StatusRequisicao @default(SOLICITADO)
   observacaoStatus String?
 
+  dataInical DateTime?
+  dataFinal DateTime?
+
   tipoAtendimento TipoAtendimento
 
   rua             String

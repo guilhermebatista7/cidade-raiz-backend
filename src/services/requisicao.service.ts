@@ -203,3 +203,39 @@ export const recusarRequisicaoService = async (requisicaoId: string, observacaoS
     }
   })
 }
+
+export const agendarRequisicaoService = async (requisicaoId: string, dataInicial: Date, dataFinal: Date, usuarioLogado: {cidadeId: string | null, role: Role}) => {
+  if(!usuarioLogado){
+    throw new Error("Usuário não autenticado");
+  }
+
+  if(usuarioLogado.role !== Role.GLOBAL && typeof usuarioLogado.cidadeId !== 'string'){
+    throw new Error("Ação não permitida");
+  }
+
+  await prisma.requisicao.update({
+    where:{ id: requisicaoId },
+    data:{
+      status: StatusRequisicao.AGENDADO_PLANTIO,
+      dataInical: dataInicial,
+      dataFinal: dataFinal
+    }
+  })
+}
+
+export const alterarRequisicaoService = async (requisicaoId: string, status: StatusRequisicao, usuarioLogado: {cidadeId: string | null, role: Role}) => {
+  if(!usuarioLogado){
+    throw new Error("Usuário não autenticado");
+  }
+
+  if(usuarioLogado.role !== Role.GLOBAL && typeof usuarioLogado.cidadeId !== 'string'){
+    throw new Error("Ação não permitida");
+  }
+
+  await prisma.requisicao.update({
+    where:{ id: requisicaoId },
+    data:{
+      status
+    }
+  })
+}
