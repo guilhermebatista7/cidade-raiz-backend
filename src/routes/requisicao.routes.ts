@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 
-import { buscarRequisicoes, buscarRequisicoesPorCidade, criarRequisicao } from "../controllers/requisicao.controller.js";
+import { buscarRequisicoes, buscarRequisicoesPorCidade, criarRequisicao, recusarRequisicao } from "../controllers/requisicao.controller.js";
 import { verificarRole } from "../middlewares/auth.middlewares.js";
 import { Role } from "../generated/prisma/enums.js";
 
@@ -28,5 +28,11 @@ router.get(
   verificarRole([Role.GLOBAL]),
   buscarRequisicoesPorCidade
 );
+
+router.post(
+  "/recusar/:id",
+  verificarRole([Role.FUNCIONARIO, Role.ADMIN_LOCAL, Role.GLOBAL]),
+  recusarRequisicao
+)
 
 export default router;

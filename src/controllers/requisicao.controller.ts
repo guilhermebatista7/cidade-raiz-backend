@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { requisicaoSchema } from "../schemas/requisicao.schema.js";
-import { criarRequisicaoService, listarReqCidadeService, listarReqService } from "../services/requisicao.service.js";
+import { criarRequisicaoService, listarReqCidadeService, listarReqService, recusarRequisicaoService } from "../services/requisicao.service.js";
 
 
 export async function criarRequisicao(req: Request, res: Response) {
@@ -90,5 +90,30 @@ export const buscarRequisicoesPorCidade = async (req: Request, res: Response) =>
 
   } catch (error) {
     return res.status(500).json({ message: `Erro ao listar requisições ${error}` })
+  }
+}
+
+export const recusarRequisicao = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  if (typeof id !== "string") {
+    return res.status(400).json({ message: "ID da requisição inválido" });
+  }
+
+  try {
+    if (!req.usuario) {
+      return res.status(401).json({
+        message: "Usuário não autencticado"
+      });
+    }
+
+    await recusarRequisicaoService(id, req.body.observacaoStatus, req.usuario);
+
+    return res.status(200).json({
+      message: "Situação da Requisição foi atualizado com sucesso",
+    });
+
+  } catch (error) {
+    return res.status(500).json({ message: `Erro ao mudar situação da requisição ${error}` })
   }
 }

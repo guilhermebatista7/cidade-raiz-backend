@@ -1,5 +1,5 @@
 import type { Usuario } from "../generated/prisma/client.js";
-import { Role, type TipoAtendimento } from "../generated/prisma/enums.js";
+import { Role, StatusRequisicao, type TipoAtendimento } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/prisma.js";
 import {
   uploadArquivoSupabase,
@@ -184,4 +184,22 @@ export const listarReqCidadeService = async (cidadeId: string, usuarioLogado: { 
   }
 
   return [];
+}
+
+export const recusarRequisicaoService = async (requisicaoId: string, observacaoStatus: string, usuarioLogado: {cidadeId: string | null, role: Role}) => {
+  if(!usuarioLogado){
+    throw new Error("Usuário não autenticado");
+  }
+
+  if(usuarioLogado.role !== Role.GLOBAL && typeof usuarioLogado.cidadeId !== 'string'){
+    throw new Error("Ação não permitida");
+  }
+
+  await prisma.requisicao.update({
+    where:{ id: requisicaoId },
+    data:{
+      status: StatusRequisicao.RECUSADO,
+      observacaoStatus: observacaoStatus
+    }
+  })
 }

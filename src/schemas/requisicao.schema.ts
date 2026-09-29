@@ -21,4 +21,5 @@ export const requisicaoSchema = z.object({
     cep: z.string().min(8, "CEP inválido"),
     estado: z.string().length(2, "O estado deve possuir 2 caracteres"),
     pontoReferencia: z.string().optional(),
+    observacaoStatus: z.string().optional(),
 })
