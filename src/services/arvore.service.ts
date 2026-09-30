@@ -85,6 +85,10 @@ export async function criarArvoreService(
 
 export async function atualizarArvoreService(
   id: string,
+  usuarioLogado: {
+    role: Role;
+    cidadeId: string | null;
+  },
   dados: {
     nome: string;
     descricao?: string;
@@ -99,8 +103,27 @@ export async function atualizarArvoreService(
     },
   });
 
+
   if (!arvoreExistente) {
     throw new Error("Árvore não encontrada");
+  }
+
+  //Evita que um usuário de outra cidade descubra o id de outra
+  const cidadeId =
+    usuarioLogado.role === Role.GLOBAL
+      ? dados.cidadeId
+      : arvoreExistente.cidadeId;
+
+  if (
+    usuarioLogado.role === Role.ADMIN_LOCAL ||
+    usuarioLogado.role === Role.FUNCIONARIO
+  ) {
+    if (
+      !usuarioLogado.cidadeId ||
+      arvoreExistente.cidadeId !== usuarioLogado.cidadeId
+    ) {
+      throw new Error("Você não tem permissão para editar esta árvore");
+    }
   }
 
   let imagemPath = arvoreExistente.imagemUrl;
@@ -133,13 +156,13 @@ export async function atualizarArvoreService(
       nomePopular: dados.nome,
       descricao: dados.descricao ?? null,
       quantidade: dados.quantidade,
-      cidadeId: dados.cidadeId,
+      cidadeId,
       imagemUrl: imagemPath,
     },
   });
 }
 
-export async function excluirArvoreService(id: string) {
+export async function excluirArvoreService(id: string, usuarioLogado: { role: Role; cidadeId: string | null; }) {
   const arvoreExistente = await prisma.arvore.findUnique({
     where: {
       id,
@@ -148,6 +171,18 @@ export async function excluirArvoreService(id: string) {
 
   if (!arvoreExistente) {
     throw new Error("Árvore não encontrada");
+  }
+
+  if (
+    usuarioLogado.role === Role.ADMIN_LOCAL ||
+    usuarioLogado.role === Role.FUNCIONARIO
+  ) {
+    if (
+      !usuarioLogado.cidadeId ||
+      arvoreExistente.cidadeId !== usuarioLogado.cidadeId
+    ) {
+      throw new Error("Você não tem permissão para excluir esta árvore");
+    }
   }
 
   if (arvoreExistente.imagemUrl) {

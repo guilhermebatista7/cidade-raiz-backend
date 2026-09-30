@@ -68,12 +68,18 @@ export async function atualizarArvore(req: Request, res: Response) {
     });
   }
 
+  if (!req.usuario) {
+    return res.status(401).json({
+      message: "Usuário não autenticado."
+    });
+  }
+
   if (typeof id !== "string") {
     return res.status(400).json({ message: "ID inválido" });
   }
 
   try {
-    const arvoreAtualizada = await atualizarArvoreService(id, validacao.data, req.file);
+    const arvoreAtualizada = await atualizarArvoreService(id, req.usuario, validacao.data, req.file);
     return res.status(200).json(arvoreAtualizada);
   } catch (error: any) {
     console.error("ERRO AO ATUALIZAR ÁRVORE:", error);
@@ -88,8 +94,14 @@ export async function excluirArvore(req: Request, res: Response) {
     return res.status(400).json({ message: "ID inválido" });
   }
 
+  if (!req.usuario) {
+    return res.status(401).json({
+      message: "Usuário não autenticado."
+    });
+  }
+
   try {
-    await excluirArvoreService(id);
+    await excluirArvoreService(id, req.usuario);
     return res.status(200).json({ message: "Árvore excluída com sucesso" });
   } catch (error: any) {
     console.error("ERRO AO EXCLUIR ÁRVORE:", error);
