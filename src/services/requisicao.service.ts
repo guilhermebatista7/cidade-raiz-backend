@@ -217,7 +217,7 @@ export const agendarRequisicaoService = async (requisicaoId: string, dataInicial
     where:{ id: requisicaoId },
     data:{
       status: StatusRequisicao.AGENDADO_PLANTIO,
-      dataInical: dataInicial,
+      dataInicial: dataInicial,
       dataFinal: dataFinal
     }
   })
