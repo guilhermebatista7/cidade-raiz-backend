@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
-import { ativarUsuarioService, atualizarUsuarioService, desativarUsuarioService, listarRolesService, listarUsuariosService } from "../services/usuario.service.js";
+import { ativarUsuarioService, atualizarUsuarioService, desativarUsuarioService, listarRolesService, listarUsuariosCidadeService, listarUsuariosService } from "../services/usuario.service.js";
 import { usuarioSchema } from "../schemas/usuario.shema.js";
+import { Role } from "../generated/prisma/enums.js";
 
 export async function listarRoles(req: Request, res: Response) {
   try {
@@ -16,9 +17,9 @@ export async function listarRoles(req: Request, res: Response) {
   }
 }
 
-export async function listarUsuarios(req: Request, res: Response){
+export async function listarUsuarios(req: Request, res: Response) {
   try {
-    if(!req.usuario){
+    if (!req.usuario) {
       return res.status(401).json({
         message: "Usuário não autencticado"
       });
@@ -26,14 +27,48 @@ export async function listarUsuarios(req: Request, res: Response){
     const usuarios = await listarUsuariosService(req.usuario);
     return res.status(200).json(usuarios);
   } catch (error) {
-    return res.status(500).json({ message: "Erro ao listar usuários "})
+    return res.status(500).json({ message: "Erro ao listar usuários " })
   }
 }
 
-export async function atualizarUsuario(req: Request, res: Response){
+export async function listarUsuariosCidade(req: Request, res: Response) {
+  try {
+    if (!req.usuario) {
+      return res.status(401).json({
+        message: "Usuário não autencticado"
+      });
+    }
+    const { cidadeId, role } = req.params;
+
+    if (typeof cidadeId !== "string") {
+      return res.status(400).json({ message: "ID da cidade inválido" });
+    }
+
+    if (!role) {
+      return res.status(400).json({
+        message: "Tipo de usuário não informado",
+      });
+    }
+
+    if (!Object.values(Role).includes(role as Role)) {
+      return res.status(400).json({
+        message: "Tipo de usuário inválido",
+      });
+    }
+
+    const roleFiltro = role as Role;
+
+    const usuarios = await listarUsuariosCidadeService(req.usuario, cidadeId, roleFiltro);
+    return res.status(200).json(usuarios);
+  } catch (error) {
+    return res.status(500).json({ message: "Erro ao listar usuários " })
+  }
+}
+
+export async function atualizarUsuario(req: Request, res: Response) {
   const { id } = req.params;
   const validacao = usuarioSchema.safeParse(req.body);
-  
+
   if (!validacao.success) {
     return res.status(400).json({
       message: "Dados inválidos",
@@ -46,7 +81,7 @@ export async function atualizarUsuario(req: Request, res: Response){
   }
 
   try {
-    if(!req.usuario){
+    if (!req.usuario) {
       return res.status(401).json({
         message: "Usuário não autenticado."
       })

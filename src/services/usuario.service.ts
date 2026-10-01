@@ -14,7 +14,7 @@ export async function listarRolesService(usuario: { role: Role }) {
   return [];
 }
 
-export async function listarUsuariosService(usuarioLogado: {role: Role, cidadeId: string | null}){
+export async function listarUsuariosService(usuarioLogado: { role: Role, cidadeId: string | null }) {
 
   const include = {
     cidade: {
@@ -26,7 +26,7 @@ export async function listarUsuariosService(usuarioLogado: {role: Role, cidadeId
     },
   };
 
-  if(usuarioLogado.role === Role.GLOBAL){
+  if (usuarioLogado.role === Role.GLOBAL) {
     return await prisma.usuario.findMany({
       orderBy: {
         criadoEm: 'desc'
@@ -35,7 +35,7 @@ export async function listarUsuariosService(usuarioLogado: {role: Role, cidadeId
     })
   }
 
-  if(usuarioLogado.role === Role.ADMIN_LOCAL){
+  if (usuarioLogado.role === Role.ADMIN_LOCAL) {
     const cidadeId = usuarioLogado.cidadeId
     return await prisma.usuario.findMany({
       where: { cidadeId },
@@ -49,22 +49,57 @@ export async function listarUsuariosService(usuarioLogado: {role: Role, cidadeId
   return [];
 }
 
-export async function atualizarUsuarioService(usuarioLogado: Request['usuario'], id:string, dados: { nome: string, email: string, role: Role, telefone?: string, cidadeId?: string} ){
-  if(!usuarioLogado){
-    throw new Error("Usuário não autenticado");
-  }
-
-  if(usuarioLogado.role !== Role.GLOBAL && dados.role !== Role.FUNCIONARIO){
+export async function listarUsuariosCidadeService(usuarioLogado: { role: Role }, cidadeId: string, roleFiltro: Role) {
+  if (usuarioLogado.role !== Role.GLOBAL) {
     throw new Error("Ação não permitida");
   }
 
-  if(usuarioLogado.role === Role.ADMIN_LOCAL && usuarioLogado.cidadeId !== dados.cidadeId){
+  const cidadePreenchida = cidadeId !== "N";
+
+  const rolesPermitidos: Role[] = cidadePreenchida
+    ? [Role.FUNCIONARIO, Role.ADMIN_LOCAL]
+    : [Role.GLOBAL, Role.CIDADAO];
+
+  if (!rolesPermitidos.includes(roleFiltro)) {
+    return [];
+  }
+
+  return await prisma.usuario.findMany({
+    where: {
+      ...(cidadePreenchida && { cidadeId }),
+      role: roleFiltro,
+    },
+    orderBy: {
+      criadoEm: 'desc'
+    },
+    include: {
+      cidade: {
+        select: {
+          id: true,
+          nome: true,
+          uf: true,
+        },
+      },
+    },
+  });
+}
+
+export async function atualizarUsuarioService(usuarioLogado: Request['usuario'], id: string, dados: { nome: string, email: string, role: Role, telefone?: string, cidadeId?: string }) {
+  if (!usuarioLogado) {
+    throw new Error("Usuário não autenticado");
+  }
+
+  if (usuarioLogado.role !== Role.GLOBAL && dados.role !== Role.FUNCIONARIO) {
+    throw new Error("Ação não permitida");
+  }
+
+  if (usuarioLogado.role === Role.ADMIN_LOCAL && usuarioLogado.cidadeId !== dados.cidadeId) {
     throw new Error("Cidade inválida");
   }
 
   return await prisma.usuario.update({
-    where:{ id },
-    data:{
+    where: { id },
+    data: {
       nome: dados.nome,
       email: dados.email,
       role: dados.role,
@@ -75,44 +110,44 @@ export async function atualizarUsuarioService(usuarioLogado: Request['usuario'],
 }
 
 
-export async function desativarUsuarioService(usuarioLogado: Request['usuario'], id: string){
+export async function desativarUsuarioService(usuarioLogado: Request['usuario'], id: string) {
 
-  if(!usuarioLogado){
+  if (!usuarioLogado) {
     throw new Error("Usuário não autenticado");
   }
 
-  const usuarioExistente = await prisma.usuario.findUnique({where: {id}});
+  const usuarioExistente = await prisma.usuario.findUnique({ where: { id } });
 
-  if(!usuarioExistente){
+  if (!usuarioExistente) {
     throw new Error("Usuário não encontrado");
   }
 
-  if(usuarioLogado.role !== Role.GLOBAL && usuarioExistente.role !== Role.FUNCIONARIO){
+  if (usuarioLogado.role !== Role.GLOBAL && usuarioExistente.role !== Role.FUNCIONARIO) {
     throw new Error("Ação não permitida");
   }
 
   return await prisma.usuario.update({
-    where: {id},
+    where: { id },
     data: {
       ativo: false,
     }
   });
 }
 
-export async function ativarUsuarioService(usuarioLogado: Request['usuario'], id: string){
+export async function ativarUsuarioService(usuarioLogado: Request['usuario'], id: string) {
 
-  if(!usuarioLogado){
+  if (!usuarioLogado) {
     throw new Error("Usuário não autenticado");
   }
 
-  const usuarioExistente = await prisma.usuario.findUnique({where: {id}});
+  const usuarioExistente = await prisma.usuario.findUnique({ where: { id } });
 
-  if(!usuarioExistente){
+  if (!usuarioExistente) {
     throw new Error("Uusário não encontrado");
   }
 
   return await prisma.usuario.update({
-    where: {id},
+    where: { id },
     data: {
       ativo: true,
     }

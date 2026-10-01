@@ -1,4 +1,4 @@
-import { ativarUsuario, atualizarUsuario, desativarUsuario, listarRoles, listarUsuarios } from "../controllers/usuario.controller.js";
+import { ativarUsuario, atualizarUsuario, desativarUsuario, listarRoles, listarUsuarios, listarUsuariosCidade } from "../controllers/usuario.controller.js";
 import { Role } from "../generated/prisma/enums.js";
 import { verificarRole } from "../middlewares/auth.middlewares.js";
 import { Router } from "express";
@@ -21,6 +21,12 @@ router.get(
   "/",
   verificarRole([Role.GLOBAL, Role.ADMIN_LOCAL]),
   listarUsuarios
+)
+
+router.get(
+  "/cidade/:cidadeId/:role",
+  verificarRole([Role.GLOBAL]),
+  listarUsuariosCidade
 )
 
 router.put(
