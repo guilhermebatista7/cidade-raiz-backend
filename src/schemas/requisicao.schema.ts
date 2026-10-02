@@ -8,9 +8,9 @@ export const requisicaoSchema = z.object({
     nomeBeneficiario: z.string(),
     telefoneBeneficiario: z.string(),
     tipoAtendimento: z
-        .enum(["retirar", "agendar"])
+        .enum(["RETIRADA_LOCAL", "PLANTIO_AGENDADO"])
         .transform((valor) =>
-            valor === "retirar"
+            valor === "RETIRADA_LOCAL"
                 ? TipoAtendimento.RETIRADA_LOCAL
                 : TipoAtendimento.PLANTIO_AGENDADO
         ),
