@@ -3,12 +3,6 @@ import { requisicaoSchema } from "../schemas/requisicao.schema.js";
 import { agendarRequisicaoService, alterarRequisicaoService, atualizarRequisicaoService, criarRequisicaoService, listarReqCidadeService, listarReqService, listarReqUsuarioService, recusarRequisicaoService } from "../services/requisicao.service.js";
 
 export async function criarRequisicao(req: Request, res: Response) {
-  console.log("BODY RECEBIDO:");
-  console.log(req.body);
-
-  console.log("FILES RECEBIDOS:");
-  console.log(req.files);
-
   const validacao = requisicaoSchema.safeParse(req.body);
 
   if (!validacao.success) {
@@ -58,16 +52,16 @@ export async function criarRequisicao(req: Request, res: Response) {
 }
 
 export async function atualizarRequisicao(req: Request, res: Response) {
-  console.log("BODY RECEBIDO:");
-  console.log(req.body);
-
-  console.log("FILES RECEBIDOS:");
-  console.log(req.files);
-
   const { id } = req.params;
 
-  if(typeof id !== "string") {
+  if (typeof id !== "string") {
     return res.status(400).json({ message: "ID da requisição inválido" });
+  }
+
+  if (!req.usuario) {
+    return res.status(401).json({
+      message: "Usuário não autencticado"
+    });
   }
 
   const validacao = requisicaoSchema.safeParse(req.body);
@@ -106,6 +100,7 @@ export async function atualizarRequisicao(req: Request, res: Response) {
 
     const requisicao = await atualizarRequisicaoService(
       id,
+      req.usuario,
       validacao.data,
       {
         fotoLocal,
@@ -219,7 +214,7 @@ export const agendarPlantio = async (req: Request, res: Response) => {
   }
 }
 
-export const alterarSituacao = async (req: Request, res: Response) => {
+export const alterarStatus = async (req: Request, res: Response) => {
   const { id } = req.params;
 
   if (typeof id !== "string") {

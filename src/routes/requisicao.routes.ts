@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 
-import { agendarPlantio, alterarSituacao, atualizarRequisicao, buscarRequisicoes, buscarRequisicoesPorCidade, buscarRequisicoesPorUsuario, criarRequisicao, recusarRequisicao } from "../controllers/requisicao.controller.js";
+import { agendarPlantio, alterarStatus, atualizarRequisicao, buscarRequisicoes, buscarRequisicoesPorCidade, buscarRequisicoesPorUsuario, criarRequisicao, recusarRequisicao } from "../controllers/requisicao.controller.js";
 import { verificarRole } from "../middlewares/auth.middlewares.js";
 import { Role } from "../generated/prisma/enums.js";
 
@@ -17,13 +17,15 @@ router.post(
    criarRequisicao
 );
 
+//Passa todos os roles, pois é preciso validar se usuário está alterando uma requisição criada por ele mesmo
 router.put(
   "/:id",
   upload.fields([
     { name: "fotoLocal", maxCount: 1 },
     { name: "comprovante", maxCount: 1 },
   ]),
-   atualizarRequisicao
+  verificarRole([Role.ADMIN_LOCAL, Role.FUNCIONARIO, Role.GLOBAL, Role.CIDADAO]),
+  atualizarRequisicao
 );
 
 router.get(
@@ -58,9 +60,9 @@ router.put(
 )
 
 router.put(
-  "/alterarSituacao/:id",
+  "/alterarStatus/:id",
   verificarRole([Role.FUNCIONARIO, Role.ADMIN_LOCAL, Role.GLOBAL]),
-  alterarSituacao
+  alterarStatus
 )
 
 export default router;

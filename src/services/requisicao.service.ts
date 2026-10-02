@@ -1,4 +1,3 @@
-import type { Usuario } from "../generated/prisma/client.js";
 import { Role, StatusRequisicao, type TipoAtendimento } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/prisma.js";
 import {
@@ -82,6 +81,7 @@ export async function criarRequisicaoService(
 
 export async function atualizarRequisicaoService(
   id: string,
+  usuarioLogado: { id: string },
   dados: {
     criadoPorId: string;
     cidadeId: string;
@@ -110,6 +110,10 @@ export async function atualizarRequisicaoService(
 
   if (!requisicaoAtual) {
     throw new Error("Requisição não encontrada");
+  }
+
+  if(usuarioLogado.id !== requisicaoAtual.criadoPorId) {
+    throw new Error("Ação não permitida");
   }
 
   //MANTER OS ARQUIVOS EXISTENTES POR PADRÃO
