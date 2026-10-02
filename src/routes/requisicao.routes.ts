@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 
-import { agendarPlantio, alterarSituacao, buscarRequisicoes, buscarRequisicoesPorCidade, criarRequisicao, recusarRequisicao } from "../controllers/requisicao.controller.js";
+import { agendarPlantio, alterarSituacao, atualizarRequisicao, buscarRequisicoes, buscarRequisicoesPorCidade, buscarRequisicoesPorUsuario, criarRequisicao, recusarRequisicao } from "../controllers/requisicao.controller.js";
 import { verificarRole } from "../middlewares/auth.middlewares.js";
 import { Role } from "../generated/prisma/enums.js";
 
@@ -17,6 +17,15 @@ router.post(
    criarRequisicao
 );
 
+router.put(
+  "/:id",
+  upload.fields([
+    { name: "fotoLocal", maxCount: 1 },
+    { name: "comprovante", maxCount: 1 },
+  ]),
+   atualizarRequisicao
+);
+
 router.get(
   '/',
   verificarRole([Role.ADMIN_LOCAL, Role.FUNCIONARIO, Role.GLOBAL]),
@@ -28,6 +37,13 @@ router.get(
   verificarRole([Role.GLOBAL]),
   buscarRequisicoesPorCidade
 );
+
+// Passamos todos os roles, para fazer uma busca pelo usuário logado.
+router.get(
+  "/usuario",
+  verificarRole([Role.ADMIN_LOCAL, Role.FUNCIONARIO, Role.GLOBAL, Role.CIDADAO]),
+  buscarRequisicoesPorUsuario
+)
 
 router.put(
   "/recusar/:id",
@@ -42,7 +58,7 @@ router.put(
 )
 
 router.put(
-  "/alterarStuacao/:id",
+  "/alterarSituacao/:id",
   verificarRole([Role.FUNCIONARIO, Role.ADMIN_LOCAL, Role.GLOBAL]),
   alterarSituacao
 )

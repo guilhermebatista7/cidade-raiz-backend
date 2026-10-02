@@ -1,7 +1,6 @@
 import type { Request, Response } from "express";
 import { requisicaoSchema } from "../schemas/requisicao.schema.js";
-import { agendarRequisicaoService, alterarRequisicaoService, criarRequisicaoService, listarReqCidadeService, listarReqService, recusarRequisicaoService } from "../services/requisicao.service.js";
-
+import { agendarRequisicaoService, alterarRequisicaoService, atualizarRequisicaoService, criarRequisicaoService, listarReqCidadeService, listarReqService, listarReqUsuarioService, recusarRequisicaoService } from "../services/requisicao.service.js";
 
 export async function criarRequisicao(req: Request, res: Response) {
   console.log("BODY RECEBIDO:");
@@ -58,6 +57,68 @@ export async function criarRequisicao(req: Request, res: Response) {
   }
 }
 
+export async function atualizarRequisicao(req: Request, res: Response) {
+  console.log("BODY RECEBIDO:");
+  console.log(req.body);
+
+  console.log("FILES RECEBIDOS:");
+  console.log(req.files);
+
+  const { id } = req.params;
+
+  if(typeof id !== "string") {
+    return res.status(400).json({ message: "ID da requisição inválido" });
+  }
+
+  const validacao = requisicaoSchema.safeParse(req.body);
+
+  if (!validacao.success) {
+    console.log("ERRO ZOD:");
+    console.dir(validacao.error.flatten(), {
+      depth: null,
+    });
+
+    return res.status(400).json({
+      message: "Dados inválidos",
+      errors: validacao.error.flatten(),
+    });
+  }
+
+  try {
+    const files = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
+
+    const fotoLocal = files?.fotoLocal?.[0];
+    const comprovante = files?.comprovante?.[0];
+
+    if (!fotoLocal) {
+      return res.status(400).json({
+        message: "A foto do local é obrigatória.",
+      });
+    }
+
+    if (!comprovante) {
+      return res.status(400).json({
+        message: "O comprovante de residência é obrigatório.",
+      });
+    }
+
+    const requisicao = await atualizarRequisicaoService(
+      id,
+      validacao.data,
+      {
+        fotoLocal,
+        comprovante,
+      }
+    );
+
+    return res.status(201).json(requisicao);
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message || "Erro ao atualizar requisição" });
+  }
+}
+
 export const buscarRequisicoes = async (req: Request, res: Response) => {
   try {
     if (!req.usuario) {
@@ -86,6 +147,21 @@ export const buscarRequisicoesPorCidade = async (req: Request, res: Response) =>
       });
     }
     const requisicoes = await listarReqCidadeService(id, req.usuario);
+    return res.status(200).json(requisicoes);
+
+  } catch (error) {
+    return res.status(500).json({ message: `Erro ao listar requisições ${error}` })
+  }
+}
+
+export const buscarRequisicoesPorUsuario = async (req: Request, res: Response) => {
+  try {
+    if (!req.usuario) {
+      return res.status(401).json({
+        message: "Usuário não autencticado"
+      });
+    }
+    const requisicoes = await listarReqUsuarioService(req.usuario);
     return res.status(200).json(requisicoes);
 
   } catch (error) {
