@@ -54,28 +54,45 @@ export async function criarRequisicaoService(
     comprovanteResidenciaPath = comprovante.path;
   }
 
-  return await prisma.requisicao.create({
-    data: {
-      criadoPorId: dados.criadoPorId,
-      cidadeId: dados.cidadeId,
-      arvoreId: dados.arvoreId,
-      nomeBeneficiario: dados.nomeBeneficiario,
-      telefoneBeneficiario: dados.telefoneBeneficiario,
+  return await prisma.$transaction(async (tx) => {
+    // 1. Cria a requisição
+    const requisicao = await tx.requisicao.create({
+      data: {
+        criadoPorId: dados.criadoPorId,
+        cidadeId: dados.cidadeId,
+        arvoreId: dados.arvoreId,
+        nomeBeneficiario: dados.nomeBeneficiario,
+        telefoneBeneficiario: dados.telefoneBeneficiario,
 
-      rua: dados.rua,
-      numero: dados.numero,
-      bairro: dados.bairro,
-      cidadeEndereco: dados.cidadeEndereco,
-      cep: dados.cep,
-      estado: dados.estado,
+        rua: dados.rua,
+        numero: dados.numero,
+        bairro: dados.bairro,
+        cidadeEndereco: dados.cidadeEndereco,
+        cep: dados.cep,
+        estado: dados.estado,
 
-      pontoReferencia: dados.pontoReferencia ?? null,
+        pontoReferencia: dados.pontoReferencia ?? null,
 
-      tipoAtendimento: dados.tipoAtendimento,
+        tipoAtendimento: dados.tipoAtendimento,
 
-      fotoLocalUrl: fotoLocalPath,
-      comprovanteResidenciaUrl: comprovanteResidenciaPath,
-    },
+        fotoLocalUrl: fotoLocalPath,
+        comprovanteResidenciaUrl: comprovanteResidenciaPath,
+      },
+    });
+
+    // 2. Cria o primeiro histórico dessa requisição
+    await tx.historicoRequisicao.create({
+      data: {
+        requisicaoId: requisicao.id,
+        usuarioId: dados.criadoPorId,
+
+        // coloque aqui o status inicial do seu sistema
+        statusNovo: StatusRequisicao.SOLICITADO,
+        observacao: "Requisição foi recebida com sucesso",
+      },
+    });
+
+    return requisicao;
   });
 }
 
@@ -112,10 +129,6 @@ export async function atualizarRequisicaoService(
     throw new Error("Requisição não encontrada");
   }
 
-  if(usuarioLogado.id !== requisicaoAtual.criadoPorId) {
-    throw new Error("Ação não permitida");
-  }
-
   //MANTER OS ARQUIVOS EXISTENTES POR PADRÃO
   let fotoLocalPath =
     requisicaoAtual.fotoLocalUrl;
@@ -137,7 +150,6 @@ export async function atualizarRequisicaoService(
     requisicaoAtual.comprovanteResidenciaUrl;
 
   // NOVA FOTO
-   
 
   if (arquivos.fotoLocal) {
 
@@ -166,7 +178,6 @@ export async function atualizarRequisicaoService(
       comprovante.path;
   }
 
-
   const requisicaoAtualizada =
     await prisma.requisicao.update({
       where: { id },
@@ -185,6 +196,7 @@ export async function atualizarRequisicaoService(
         cidadeEndereco: dados.cidadeEndereco,
         cep: dados.cep,
         estado: dados.estado,
+        status: StatusRequisicao.SOLICITADO,
 
         pontoReferencia: dados.pontoReferencia ?? null,
 
@@ -195,6 +207,16 @@ export async function atualizarRequisicaoService(
         comprovanteResidenciaUrl: comprovanteResidenciaPath,
       },
     });
+
+  await prisma.historicoRequisicao.create({
+    data: {
+      requisicaoId: requisicaoAtualizada.id,
+      usuarioId: usuarioLogado.id,
+      statusAnterior: requisicaoAtual.status,
+      statusNovo: requisicaoAtualizada.status,
+      observacao: "Requisição atualizada com sucesso",
+    }
+  })
 
   //Só excluímos se um NOVO arquivo foi enviado.
   if (
@@ -354,6 +376,15 @@ export const listarReqUsuarioService = async (usuarioLogado: { id: string }) => 
         nomePopular: true,
       },
     },
+    historico: {
+      select: {
+        id: true,
+        statusAnterior: true,
+        statusNovo: true,
+        observacao: true,
+        criadoEm: true,
+      }
+    }
   };
 
   const requisicoes = await prisma.requisicao.findMany({
@@ -372,13 +403,22 @@ export const listarReqUsuarioService = async (usuarioLogado: { id: string }) => 
 
 }
 
-export const recusarRequisicaoService = async (requisicaoId: string, observacaoStatus: string, usuarioLogado: { cidadeId: string | null, role: Role }) => {
+export const recusarRequisicaoService = async (requisicaoId: string, observacaoStatus: string, usuarioLogado: { id: string, cidadeId: string | null, role: Role }) => {
   if (!usuarioLogado) {
     throw new Error("Usuário não autenticado");
   }
 
   if (usuarioLogado.role !== Role.GLOBAL && typeof usuarioLogado.cidadeId !== 'string') {
     throw new Error("Ação não permitida");
+  }
+
+  //BUSCAR REQUISIÇÃO ATUAL
+  const requisicaoAtual = await prisma.requisicao.findUnique({
+    where: { id: requisicaoId },
+  });
+
+  if (!requisicaoAtual) {
+    throw new Error("Requisição não encontrada");
   }
 
   await prisma.requisicao.update({
@@ -388,15 +428,34 @@ export const recusarRequisicaoService = async (requisicaoId: string, observacaoS
       observacaoStatus: observacaoStatus
     }
   })
+
+  await prisma.historicoRequisicao.create({
+    data: {
+      requisicaoId: requisicaoAtual.id,
+      usuarioId: usuarioLogado.id,
+      statusAnterior: requisicaoAtual.status,
+      statusNovo: StatusRequisicao.RECUSADO,
+      observacao: "Requisição recusada com sucesso",
+    }
+  })
 }
 
-export const agendarRequisicaoService = async (requisicaoId: string, dataInicial: Date, dataFinal: Date, usuarioLogado: { cidadeId: string | null, role: Role }) => {
+export const agendarRequisicaoService = async (requisicaoId: string, dataInicial: Date, dataFinal: Date, usuarioLogado: { id: string, cidadeId: string | null, role: Role }) => {
   if (!usuarioLogado) {
     throw new Error("Usuário não autenticado");
   }
 
   if (usuarioLogado.role !== Role.GLOBAL && typeof usuarioLogado.cidadeId !== 'string') {
     throw new Error("Ação não permitida");
+  }
+
+  //BUSCAR REQUISIÇÃO ATUAL
+  const requisicaoAtual = await prisma.requisicao.findUnique({
+    where: { id: requisicaoId },
+  });
+
+  if (!requisicaoAtual) {
+    throw new Error("Requisição não encontrada");
   }
 
   await prisma.requisicao.update({
@@ -407,9 +466,19 @@ export const agendarRequisicaoService = async (requisicaoId: string, dataInicial
       dataFinal: dataFinal
     }
   })
+
+  await prisma.historicoRequisicao.create({
+    data: {
+      requisicaoId: requisicaoAtual.id,
+      usuarioId: usuarioLogado.id,
+      statusAnterior: requisicaoAtual.status,
+      statusNovo: StatusRequisicao.AGENDADO_PLANTIO,
+      observacao: "Requisição agendada com sucesso",
+    }
+  })
 }
 
-export const alterarRequisicaoService = async (requisicaoId: string, status: StatusRequisicao, usuarioLogado: { cidadeId: string | null, role: Role }) => {
+export const alterarRequisicaoService = async (requisicaoId: string, status: StatusRequisicao, usuarioLogado: { id: string, cidadeId: string | null, role: Role }) => {
   if (!usuarioLogado) {
     throw new Error("Usuário não autenticado");
   }
@@ -418,10 +487,29 @@ export const alterarRequisicaoService = async (requisicaoId: string, status: Sta
     throw new Error("Ação não permitida");
   }
 
+  //BUSCAR REQUISIÇÃO ATUAL
+  const requisicaoAtual = await prisma.requisicao.findUnique({
+    where: { id: requisicaoId },
+  });
+
+  if (!requisicaoAtual) {
+    throw new Error("Requisição não encontrada");
+  }
+
   await prisma.requisicao.update({
     where: { id: requisicaoId },
     data: {
       status
+    }
+  })
+
+  await prisma.historicoRequisicao.create({
+    data: {
+      requisicaoId: requisicaoAtual.id,
+      usuarioId: usuarioLogado.id,
+      statusAnterior: requisicaoAtual.status,
+      statusNovo: status,
+      observacao: "Requisição atualizada com sucesso",
     }
   })
 }

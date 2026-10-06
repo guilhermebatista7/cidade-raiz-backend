@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { requisicaoSchema } from "../schemas/requisicao.schema.js";
 import { agendarRequisicaoService, alterarRequisicaoService, atualizarRequisicaoService, criarRequisicaoService, listarReqCidadeService, listarReqService, listarReqUsuarioService, recusarRequisicaoService } from "../services/requisicao.service.js";
+import type { ArquivoMulter } from "../services/storage.service.js";
 
 export async function criarRequisicao(req: Request, res: Response) {
   const validacao = requisicaoSchema.safeParse(req.body);
@@ -86,26 +87,24 @@ export async function atualizarRequisicao(req: Request, res: Response) {
     const fotoLocal = files?.fotoLocal?.[0];
     const comprovante = files?.comprovante?.[0];
 
-    if (!fotoLocal) {
-      return res.status(400).json({
-        message: "A foto do local é obrigatória.",
-      });
+    const arquivos: {
+      fotoLocal?: ArquivoMulter;
+      comprovante?: ArquivoMulter;
+    } = {};
+
+    if (fotoLocal) {
+      arquivos.fotoLocal = fotoLocal;
     }
 
-    if (!comprovante) {
-      return res.status(400).json({
-        message: "O comprovante de residência é obrigatório.",
-      });
+    if (comprovante) {
+      arquivos.comprovante = comprovante;
     }
 
     const requisicao = await atualizarRequisicaoService(
       id,
       req.usuario,
       validacao.data,
-      {
-        fotoLocal,
-        comprovante,
-      }
+      arquivos
     );
 
     return res.status(201).json(requisicao);
