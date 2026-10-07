@@ -119,8 +119,10 @@ model Requisicao {
 
   fotoLocalUrl             String?
   comprovanteResidenciaUrl String?
+  fotoPlantioUrl           String?
 
   historico HistoricoRequisicao[]
+  publicacao Publicacao[]
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -139,6 +141,18 @@ model HistoricoRequisicao {
   statusNovo     StatusRequisicao
 
   observacao String?
+
+  criadoEm DateTime @default(now())
+}
+
+model Publicacao {
+  id String @id @default(uuid()) @db.Uuid
+
+  requisicaoId String     @db.Uuid
+  requisicao   Requisicao @relation(fields: [requisicaoId], references: [id])
+
+  titulo    String?
+  descricao String?
 
   criadoEm DateTime @default(now())
 }

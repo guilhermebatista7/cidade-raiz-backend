@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 
-import { agendarPlantio, alterarStatus, atualizarRequisicao, buscarRequisicoes, buscarRequisicoesPorCidade, buscarRequisicoesPorUsuario, criarRequisicao, recusarRequisicao } from "../controllers/requisicao.controller.js";
+import { agendarPlantio, alterarStatus, atualizarFotoPlantio, atualizarRequisicao, buscarRequisicoes, buscarRequisicoesPorCidade, buscarRequisicoesPorUsuario, criarRequisicao, recusarRequisicao } from "../controllers/requisicao.controller.js";
 import { verificarRole } from "../middlewares/auth.middlewares.js";
 import { Role } from "../generated/prisma/enums.js";
 
@@ -26,6 +26,16 @@ router.put(
   ]),
   verificarRole([Role.ADMIN_LOCAL, Role.FUNCIONARIO, Role.GLOBAL, Role.CIDADAO]),
   atualizarRequisicao
+);
+
+//Passa todos os roles, e verifica se caso o usuário seja cidadão, se ele é o dono da requisição 
+router.put(
+  "/fotoPlantio/:id",
+  upload.fields([
+    { name: "fotoPlantio", maxCount: 1 },
+  ]),
+  verificarRole([Role.ADMIN_LOCAL, Role.FUNCIONARIO, Role.GLOBAL, Role.CIDADAO]),
+  atualizarFotoPlantio
 );
 
 router.get(

@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { requisicaoSchema } from "../schemas/requisicao.schema.js";
-import { agendarRequisicaoService, alterarRequisicaoService, atualizarRequisicaoService, criarRequisicaoService, listarReqCidadeService, listarReqService, listarReqUsuarioService, recusarRequisicaoService } from "../services/requisicao.service.js";
+import { agendarRequisicaoService, alterarRequisicaoService, atualizarFotoPlantioService, atualizarRequisicaoService, criarRequisicaoService, listarReqCidadeService, listarReqService, listarReqUsuarioService, recusarRequisicaoService } from "../services/requisicao.service.js";
 import type { ArquivoMulter } from "../services/storage.service.js";
 
 export async function criarRequisicao(req: Request, res: Response) {
@@ -104,6 +104,46 @@ export async function atualizarRequisicao(req: Request, res: Response) {
       id,
       req.usuario,
       validacao.data,
+      arquivos
+    );
+
+    return res.status(201).json(requisicao);
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message || "Erro ao atualizar requisição" });
+  }
+}
+
+export async function atualizarFotoPlantio(req: Request, res: Response) {
+  const { id } = req.params;
+
+  if (typeof id !== "string") {
+    return res.status(400).json({ message: "ID da requisição inválido" });
+  }
+
+  if (!req.usuario) {
+    return res.status(401).json({
+      message: "Usuário não autencticado"
+    });
+  }
+
+  try {
+    const files = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
+
+    const fotoPlantio = files?.fotoPlantio?.[0];
+
+    const arquivos: {
+      fotoPlantio?: ArquivoMulter;
+    } = {};
+
+    if (fotoPlantio) {
+      arquivos.fotoPlantio = fotoPlantio;
+    }
+
+    const requisicao = await atualizarFotoPlantioService(
+      id,
+      req.usuario,
       arquivos
     );
 

@@ -242,6 +242,55 @@ export async function atualizarRequisicaoService(
   return requisicaoAtualizada;
 }
 
+export const atualizarFotoPlantioService = async (id: string, usuarioLogado: { id: string, role: Role }, arquivos: { fotoPlantio?: ArquivoMulter }) => {
+  const requisicao = await prisma.requisicao.findUnique({
+    where: { id },
+  });
+
+  if (!requisicao) {
+    throw new Error("Requisição não encontrada");
+  }
+
+  if (usuarioLogado.role === Role.CIDADAO && requisicao.criadoPorId !== usuarioLogado.id) {
+    throw new Error("Ação não permitida");
+  }
+
+  let fotoPlantioPath = requisicao.fotoPlantioUrl;
+
+  const fotoPlantioAntiga = fotoPlantioPath;
+
+  if (arquivos.fotoPlantio) {
+    const foto = await uploadArquivoSupabase(
+      arquivos.fotoPlantio,
+      "public_box",
+      "fotos_plantio",
+      true
+    );
+
+    fotoPlantioPath = foto.path;
+  }
+
+  const requisicaoAtualizada = await prisma.requisicao.update({
+    where: { id },
+    data: {
+      fotoPlantioUrl: fotoPlantioPath,
+    },
+  });
+
+  //Só excluímos se uma NOVA foto foi enviada.
+  if (
+    arquivos.fotoPlantio &&
+    fotoPlantioAntiga
+  ) {
+    await excluirArquivoSupabase(
+      "public_box",
+      fotoPlantioAntiga
+    );
+  }
+
+  return requisicaoAtualizada;
+}
+
 async function adicionarUrlsArquivos(requisicao: any) {
   const fotoLocalUrl = requisicao.fotoLocalUrl ? obterUrlPublica("public_box", requisicao.fotoLocalUrl) : null;
 
@@ -249,10 +298,13 @@ async function adicionarUrlsArquivos(requisicao: any) {
     ? await obterUrlAssinada("box", requisicao.comprovanteResidenciaUrl, 300)
     : null;
 
+  const fotoPlantioUrl = requisicao.fotoPlantioUrl ? obterUrlPublica("public_box", requisicao.fotoPlantioUrl) : null;
+
   return {
     ...requisicao,
     fotoLocalUrl,
     comprovanteResidenciaUrl,
+    fotoPlantioUrl,
   };
 }
 
