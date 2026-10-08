@@ -288,7 +288,7 @@ export const atualizarFotoPlantioService = async (id: string, usuarioLogado: { i
     );
   }
 
-  return requisicaoAtualizada;
+  return await adicionarUrlsArquivos(requisicaoAtualizada);
 }
 
 async function adicionarUrlsArquivos(requisicao: any) {
