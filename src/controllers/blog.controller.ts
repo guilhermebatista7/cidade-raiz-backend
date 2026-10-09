@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { publicacaoSchema } from "../schemas/publicacao.schema.js";
-import { buscarPublicacaoService, criarPublicacaoService } from "../services/blog.service.js";
+import { buscarPublicacaoService, criarPublicacaoService, listarPublicacoesService } from "../services/blog.service.js";
 
 export async function criarPublicacao(req: Request, res: Response) {
   const validacao = publicacaoSchema.safeParse(req.body);
@@ -18,6 +18,81 @@ export async function criarPublicacao(req: Request, res: Response) {
   } catch (error: any) {
     console.error("ERRO AO CRIAR PUBLICAÇÂO:", error);
     return res.status(500).json({ message: error.message || "Erro ao criar publicação" });
+  }
+}
+
+
+export async function listarPublicacoes(
+  req: Request,
+  res: Response,
+) {
+  const limitQuery = req.query.limit;
+  const cursorDateQuery = req.query.cursorDate;
+  const cursorIdQuery = req.query.cursorId;
+
+  // O limite padrão é 10.
+  const limit =
+    limitQuery === undefined ? 10 : Number(limitQuery);
+
+  if (
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > 50
+  ) {
+    return res.status(400).json({
+      message: "O limite deve ser um inteiro entre 1 e 50.",
+    });
+  }
+
+  // O cursor deve conter data e ID juntos.
+  const temData = cursorDateQuery !== undefined;
+  const temId = cursorIdQuery !== undefined;
+
+  if (temData !== temId) {
+    return res.status(400).json({
+      message: "Informe cursorDate e cursorId juntos.",
+    });
+  }
+
+  let cursorDate: Date | undefined;
+  let cursorId: string | undefined;
+
+  if (temData && temId) {
+    if (
+      typeof cursorDateQuery !== "string" ||
+      typeof cursorIdQuery !== "string" ||
+      cursorIdQuery.trim() === ""
+    ) {
+      return res.status(400).json({
+        message: "Cursor inválido.",
+      });
+    }
+
+    cursorDate = new Date(cursorDateQuery);
+
+    if (Number.isNaN(cursorDate.getTime())) {
+      return res.status(400).json({
+        message: "A data do cursor é inválida.",
+      });
+    }
+
+    cursorId = cursorIdQuery;
+  }
+
+  try {
+    const resultado = await listarPublicacoesService({
+      limit,
+      ...(cursorDate !== undefined ? { cursorDate } : {}),
+      ...(cursorId !== undefined ? { cursorId } : {}),
+    });
+
+    return res.status(200).json(resultado);
+  } catch (error) {
+    console.error("Erro ao listar publicações:", error);
+
+    return res.status(500).json({
+      message: "Não foi possível listar as publicações.",
+    });
   }
 }
 
