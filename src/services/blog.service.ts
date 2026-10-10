@@ -1,5 +1,6 @@
 import type { Prisma } from "../generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
+import { obterUrlPublica } from "./storage.service.js";
 
 interface ListarPublicacoesParams {
   limit: number;
@@ -48,17 +49,35 @@ export async function listarPublicacoesService({
       titulo: true,
       descricao: true,
       criadoEm: true,
-      
+
       requisicao: {
         select: {
           nomeBeneficiario: true,
+          fotoPlantioUrl: true,
         },
       },
     },
   });
 
+  // O registro extra indica se existe uma próxima página.
   const hasMore = items.length > limit;
-  const publicacoes = items.slice(0, limit);
+
+  // Remove o registro extra e converte o caminho em URL pública.
+  const publicacoes = items.slice(0, limit).map((publicacao) => ({
+    ...publicacao,
+    requisicao: publicacao.requisicao
+      ? {
+        ...publicacao.requisicao,
+        fotoPlantioUrl: publicacao.requisicao.fotoPlantioUrl
+          ? obterUrlPublica(
+            "public_box",
+            publicacao.requisicao.fotoPlantioUrl
+          )
+          : null,
+      }
+      : null,
+  }));
+
   const ultima = publicacoes.at(-1);
 
   return {
