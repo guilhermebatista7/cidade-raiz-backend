@@ -4,21 +4,36 @@ import { Role } from "../generated/prisma/enums.js";
 import { buscarPublicacao, criarPublicacao, listarPublicacoes } from "../controllers/blog.controller.js";
 const router = Router();
 
+const verificarUsuario = verificarRole([
+  Role.CIDADAO,
+  Role.FUNCIONARIO,
+  Role.ADMIN_LOCAL,
+  Role.GLOBAL,
+]);
+
 //Passa por todos para verificar se é cidadão comum e req é dele mesmo 
 router.post(
   "/", 
-  verificarRole([Role.CIDADAO, Role.FUNCIONARIO, Role.ADMIN_LOCAL, Role.GLOBAL]), 
+  verificarUsuario,
   criarPublicacao
 );
 
 router.get(
   "/",
+   (req, res, next) => {
+    if (req.query.minhasPublicacoes === "true") {
+      return verificarUsuario(req, res, next);
+    }
+
+    return next();
+  },
+
   listarPublicacoes
 )
 
 router.get(
   "/buscarReq/:id",
-  verificarRole([Role.CIDADAO, Role.GLOBAL, Role.ADMIN_LOCAL, Role.FUNCIONARIO]),
+  verificarUsuario,
   buscarPublicacao
 );
 

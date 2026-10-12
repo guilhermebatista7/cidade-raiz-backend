@@ -26,11 +26,23 @@ export async function listarPublicacoes(
   req: Request,
   res: Response,
 ) {
-  const limitQuery = req.query.limit;
-  const cursorDateQuery = req.query.cursorDate;
-  const cursorIdQuery = req.query.cursorId;
+  const {
+    limit: limitQuery,
+    cursorDate: cursorDateQuery,
+    cursorId: cursorIdQuery,
+    cidadeId: cidadeIdQuery,
+    minhasPublicacoes: minhasPublicacoesQuery,
+  } = req.query;
 
-  // O limite padrão é 10.
+  if (
+    limitQuery !== undefined &&
+    typeof limitQuery !== "string"
+  ) {
+    return res.status(400).json({
+      message: "O limite deve ser um inteiro entre 1 e 50.",
+    });
+  }
+
   const limit =
     limitQuery === undefined ? 10 : Number(limitQuery);
 
@@ -44,7 +56,51 @@ export async function listarPublicacoes(
     });
   }
 
-  // O cursor deve conter data e ID juntos.
+  // Validação dos IDs usados no banco.
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  let cidadeId: string | undefined;
+
+  if (cidadeIdQuery !== undefined) {
+    if (
+      typeof cidadeIdQuery !== "string" ||
+      !uuidRegex.test(cidadeIdQuery)
+    ) {
+      return res.status(400).json({
+        message: "O ID da cidade é inválido.",
+      });
+    }
+
+    cidadeId = cidadeIdQuery;
+  }
+
+  if (
+    minhasPublicacoesQuery !== undefined &&
+    minhasPublicacoesQuery !== "true" &&
+    minhasPublicacoesQuery !== "false"
+  ) {
+    return res.status(400).json({
+      message: "minhasPublicacoes deve ser true ou false.",
+    });
+  }
+
+  const minhasPublicacoes =
+    minhasPublicacoesQuery === "true";
+
+  let usuarioId: string | undefined;
+
+  if (minhasPublicacoes) {
+    if (!req.usuario) {
+      return res.status(401).json({
+        message: "Entre na sua conta para ver suas publicações.",
+      });
+    }
+
+    usuarioId = req.usuario.id;
+  }
+
+  // Data e ID precisam ser enviados juntos.
   const temData = cursorDateQuery !== undefined;
   const temId = cursorIdQuery !== undefined;
 
@@ -61,7 +117,7 @@ export async function listarPublicacoes(
     if (
       typeof cursorDateQuery !== "string" ||
       typeof cursorIdQuery !== "string" ||
-      cursorIdQuery.trim() === ""
+      !uuidRegex.test(cursorIdQuery)
     ) {
       return res.status(400).json({
         message: "Cursor inválido.",
@@ -84,6 +140,8 @@ export async function listarPublicacoes(
       limit,
       ...(cursorDate !== undefined ? { cursorDate } : {}),
       ...(cursorId !== undefined ? { cursorId } : {}),
+      ...(cidadeId !== undefined ? { cidadeId } : {}),
+      ...(usuarioId !== undefined ? { usuarioId } : {}),
     });
 
     return res.status(200).json(resultado);

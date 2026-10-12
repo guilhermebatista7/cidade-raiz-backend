@@ -6,17 +6,44 @@ interface ListarPublicacoesParams {
   limit: number;
   cursorDate?: Date;
   cursorId?: string;
+  cidadeId?: string;
+  usuarioId?: string;
 }
 
 export async function listarPublicacoesService({
   limit,
   cursorDate,
   cursorId,
+  cidadeId,
+  usuarioId,
 }: ListarPublicacoesParams) {
-  const temCursor = cursorDate !== undefined && cursorId !== undefined;
+  const filtros: Prisma.PublicacaoWhereInput[] = [];
 
-  const where: Prisma.PublicacaoWhereInput | undefined = temCursor
-    ? {
+  // Filtra pela cidade vinculada à requisição.
+  if (cidadeId !== undefined) {
+    filtros.push({
+      requisicao: {
+        is: {
+          cidadeId,
+        },
+      },
+    });
+  }
+
+  // Filtra pelo criador da requisição.
+  if (usuarioId !== undefined) {
+    filtros.push({
+      requisicao: {
+        is: {
+          criadoPorId: usuarioId,
+        },
+      },
+    });
+  }
+
+  // Mantém a paginação dentro do conjunto filtrado.
+  if (cursorDate !== undefined && cursorId !== undefined) {
+    filtros.push({
       OR: [
         {
           criadoEm: {
@@ -30,11 +57,16 @@ export async function listarPublicacoesService({
           },
         },
       ],
-    }
-    : undefined;
+    });
+  }
+
+  const where: Prisma.PublicacaoWhereInput =
+    filtros.length > 0
+      ? { AND: filtros }
+      : {};
 
   const items = await prisma.publicacao.findMany({
-    ...(where !== undefined ? { where } : {}),
+    where,
 
     orderBy: [
       { criadoEm: "desc" },
@@ -59,30 +91,36 @@ export async function listarPublicacoesService({
     },
   });
 
-  // O registro extra indica se existe uma próxima página.
+  // O registro extra indica se há mais resultados
+  // para os mesmos filtros.
   const hasMore = items.length > limit;
 
-  // Remove o registro extra e converte o caminho em URL pública.
-  const publicacoes = items.slice(0, limit).map((publicacao) => ({
-    ...publicacao,
-    requisicao: publicacao.requisicao
-      ? {
-        ...publicacao.requisicao,
-        fotoPlantioUrl: publicacao.requisicao.fotoPlantioUrl
-          ? obterUrlPublica(
-            "public_box",
+  const publicacoes = items
+    .slice(0, limit)
+    .map((publicacao) => ({
+      ...publicacao,
+
+      requisicao: publicacao.requisicao
+        ? {
+          ...publicacao.requisicao,
+
+          fotoPlantioUrl:
             publicacao.requisicao.fotoPlantioUrl
-          )
-          : null,
-      }
-      : null,
-  }));
+              ? obterUrlPublica(
+                "public_box",
+                publicacao.requisicao.fotoPlantioUrl,
+              )
+              : null,
+        }
+        : null,
+    }));
 
   const ultima = publicacoes.at(-1);
 
   return {
     items: publicacoes,
     hasMore,
+
     nextCursor:
       hasMore && ultima
         ? {
