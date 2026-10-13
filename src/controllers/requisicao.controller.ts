@@ -160,7 +160,14 @@ export const buscarRequisicoes = async (req: Request, res: Response) => {
         message: "Usuário não autencticado"
       });
     }
-    const requisicoes = await listarReqService(req.usuario);
+    
+    const { dataInicial, dataFinal } = req.query;
+
+    if (typeof dataInicial !== 'string' || typeof dataFinal !== 'string') {
+      return res.status(400).json({ message: "Datas inválidas" });
+    }
+
+    const requisicoes = await listarReqService(req.usuario, dataInicial, dataFinal);
     return res.status(200).json(requisicoes);
   } catch (error) {
     return res.status(500).json({ message: `Erro ao listar requisições ${error}` })
@@ -169,6 +176,11 @@ export const buscarRequisicoes = async (req: Request, res: Response) => {
 
 export const buscarRequisicoesPorCidade = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const { dataInicial, dataFinal } = req.query;
+
+  if (typeof dataInicial !== 'string' || typeof dataFinal !== 'string') {
+    return res.status(400).json({ message: "Datas inválidas" });
+  }
 
   if (typeof id !== "string") {
     return res.status(400).json({ message: "ID da cidade inválido" });
@@ -180,7 +192,7 @@ export const buscarRequisicoesPorCidade = async (req: Request, res: Response) =>
         message: "Usuário não autencticado"
       });
     }
-    const requisicoes = await listarReqCidadeService(id, req.usuario);
+    const requisicoes = await listarReqCidadeService(id, req.usuario, dataInicial, dataFinal);
     return res.status(200).json(requisicoes);
 
   } catch (error) {

@@ -308,7 +308,7 @@ async function adicionarUrlsArquivos(requisicao: any) {
   };
 }
 
-export const listarReqService = async (usuarioLogado: { id: string, cidadeId: string | null, role: Role, email: string }) => {
+export const listarReqService = async (usuarioLogado: { id: string, cidadeId: string | null, role: Role, email: string }, dataInicial: string, datafinal: string) => {
 
   const include = {
     cidade: {
@@ -340,8 +340,17 @@ export const listarReqService = async (usuarioLogado: { id: string, cidadeId: st
     }
 
     const cidadeId = usuarioLogado.cidadeId
+    const inicio = new Date(`${dataInicial}T00:00:00.000Z`);
+    const fim = new Date(`${datafinal}T23:59:59.999Z`);
+
     const requisicoes = await prisma.requisicao.findMany({
-      where: { cidadeId },
+      where: {
+        cidadeId, 
+        criadoEm: {
+          gte: inicio,
+          lte: fim,
+        }
+      },
       orderBy: {
         criadoEm: 'desc'
       },
@@ -356,7 +365,7 @@ export const listarReqService = async (usuarioLogado: { id: string, cidadeId: st
   return [];
 }
 
-export const listarReqCidadeService = async (cidadeId: string, usuarioLogado: { id: string, cidadeId: string | null, role: Role, email: string }) => {
+export const listarReqCidadeService = async (cidadeId: string, usuarioLogado: { id: string, cidadeId: string | null, role: Role, email: string }, dataInicial: string, datafinal: string) => {
 
   const include = {
     cidade: {
@@ -382,10 +391,16 @@ export const listarReqCidadeService = async (cidadeId: string, usuarioLogado: { 
   };
 
   if (usuarioLogado.role === Role.GLOBAL) {
+    const inicio = new Date(`${dataInicial}T00:00:00.000Z`);
+    const fim = new Date(`${datafinal}T23:59:59.999Z`);
 
     const requisicoes = await prisma.requisicao.findMany({
       where: {
         cidadeId: cidadeId,
+        criadoEm: {
+          gte: inicio,
+          lte: fim,
+        }
       },
       orderBy: {
         criadoEm: 'desc'

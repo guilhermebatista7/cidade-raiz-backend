@@ -51,7 +51,7 @@ export async function listarCidadesUsuarioService(usuario: {role: Role; cidadeId
     return [];
   }
   
-  return await prisma.cidade.findUnique({
+  return await prisma.cidade.findMany({
     where: {
       id: usuario.cidadeId
     },
