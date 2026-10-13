@@ -54,6 +54,20 @@ export async function criarRequisicaoService(
     comprovanteResidenciaPath = comprovante.path;
   }
 
+  const arvore = await prisma.arvore.findUnique({
+    where: {
+      id: dados.arvoreId,
+    }
+  })
+
+  if (!arvore) {
+    throw new Error(`Àrvore não encontrada`);
+  }
+
+  if (arvore?.quantidade == 0) {
+    throw new Error(`Estoque da árvore ${arvore.nomePopular} está esgotado`);
+  }
+
   return await prisma.$transaction(async (tx) => {
     // 1. Cria a requisição
     const requisicao = await tx.requisicao.create({
@@ -345,7 +359,7 @@ export const listarReqService = async (usuarioLogado: { id: string, cidadeId: st
 
     const requisicoes = await prisma.requisicao.findMany({
       where: {
-        cidadeId, 
+        cidadeId,
         criadoEm: {
           gte: inicio,
           lte: fim,
@@ -545,6 +559,7 @@ export const agendarRequisicaoService = async (requisicaoId: string, dataInicial
   })
 }
 
+//Não altera para recusado ou agendado para plantio
 export const alterarRequisicaoService = async (requisicaoId: string, status: StatusRequisicao, usuarioLogado: { id: string, cidadeId: string | null, role: Role }) => {
   if (!usuarioLogado) {
     throw new Error("Usuário não autenticado");
@@ -563,20 +578,57 @@ export const alterarRequisicaoService = async (requisicaoId: string, status: Sta
     throw new Error("Requisição não encontrada");
   }
 
-  await prisma.requisicao.update({
-    where: { id: requisicaoId },
-    data: {
-      status
+  const arvore = await prisma.arvore.findUnique({
+    where: {
+      id: requisicaoAtual.arvoreId,
     }
   })
 
-  await prisma.historicoRequisicao.create({
-    data: {
-      requisicaoId: requisicaoAtual.id,
-      usuarioId: usuarioLogado.id,
-      statusAnterior: requisicaoAtual.status,
-      statusNovo: status,
-      observacao: "Requisição atualizada com sucesso",
+  if (!arvore) {
+    throw new Error(`Àrvore não encontrada`);
+  }
+
+  if (arvore?.quantidade == 0 && requisicaoAtual.status == StatusRequisicao.SOLICITADO) {
+    throw new Error(`Estoque da árvore ${arvore.nomePopular} está esgotado`);
+  }
+
+  return await prisma.$transaction(async (tx) => {
+    await tx.requisicao.update({
+      where: { id: requisicaoId },
+      data: {
+        status
+      }
+    })
+
+    await tx.historicoRequisicao.create({
+      data: {
+        requisicaoId: requisicaoAtual.id,
+        usuarioId: usuarioLogado.id,
+        statusAnterior: requisicaoAtual.status,
+        statusNovo: status,
+        observacao: "Requisição atualizada com sucesso",
+      }
+    })
+
+    //Se estado anterior da req é Solicitado, o processo já foi iniciado
+    if(requisicaoAtual.status === StatusRequisicao.SOLICITADO){
+      await tx.arvore.update({
+        where: {id: arvore.id},
+        data: {
+          quantidade: arvore.quantidade - 1,  
+        }
+      })
     }
+
+    //Se requisição é alterada para solicitado, retorna quantidade da árvore
+    if(status === StatusRequisicao.SOLICITADO){
+      await tx.arvore.update({
+        where: {id: arvore.id},
+        data: {
+          quantidade: arvore.quantidade + 1,  
+        }
+      })
+    }
+
   })
 }
