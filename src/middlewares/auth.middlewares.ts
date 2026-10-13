@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { supabase } from "../lib/supabase.js";
 import { prisma } from "../lib/prisma.js";
 import type { Role } from "../generated/prisma/enums.js";
+import { obterUsuarioPorToken } from "../services/auth.service.js";
 
 // Estende a tipagem do Express para reconhecer req.usuario nas próximas rotas
 declare global {
@@ -55,8 +56,8 @@ export function verificarRole(rolesPermitidas: Role[]) {
 
       // 3. Valida se o cargo (role) do usuário está entre os permitidos
       if (!rolesPermitidas.includes(usuario.role)) {
-        return res.status(403).json({ 
-          message: "Acesso negado. Você não tem permissão para realizar esta ação." 
+        return res.status(403).json({
+          message: "Acesso negado. Você não tem permissão para realizar esta ação."
         });
       }
 
@@ -75,4 +76,28 @@ export function verificarRole(rolesPermitidas: Role[]) {
       return res.status(500).json({ message: "Erro interno ao validar permissões." });
     }
   };
+}
+
+export async function autenticarOpcional(
+  req: Request,
+  _res: Response,
+  next: NextFunction
+) {
+  const token = extrairTokenCookie(req);
+
+  // Visitante sem login: continua normalmente.
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const usuario = await obterUsuarioPorToken(token);
+
+    req.usuario = usuario;
+  } catch {
+    // Cookie inválido ou sessão expirada:
+    // a rota pública continua acessível.
+  }
+
+  return next();
 }

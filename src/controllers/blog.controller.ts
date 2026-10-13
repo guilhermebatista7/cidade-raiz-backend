@@ -21,7 +21,6 @@ export async function criarPublicacao(req: Request, res: Response) {
   }
 }
 
-
 export async function listarPublicacoes(
   req: Request,
   res: Response,
