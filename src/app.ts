@@ -8,6 +8,7 @@ import cidadeRouter from './routes/cidade.routes.js';
 import usuarioRouter from './routes/usuario.routes.js';
 import requisicaoRouter from './routes/requisicao.routes.js';
 import blogRouter from './routes/blog.routes.js';
+import relatorioRouter from './routes/relatorio.routes.js';
 
 const app = express();
 
@@ -27,5 +28,6 @@ app.use("/api/cidades", cidadeRouter);
 app.use("/api/usuario", usuarioRouter);
 app.use("/api/requisicao", requisicaoRouter);
 app.use("/api/blog", blogRouter);
+app.use("/api/relatorio", relatorioRouter);
 
 export default app;
