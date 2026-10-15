@@ -15,6 +15,7 @@ export async function criarRequisicaoService(
     arvoreId: string;
     nomeBeneficiario: string;
     telefoneBeneficiario: string;
+    emailBeneficiario?: string | undefined;
     rua: string;
     numero: string;
     bairro: string;
@@ -77,6 +78,7 @@ export async function criarRequisicaoService(
         arvoreId: dados.arvoreId,
         nomeBeneficiario: dados.nomeBeneficiario,
         telefoneBeneficiario: dados.telefoneBeneficiario,
+        emailBeneficiario: dados.emailBeneficiario ?? '',
 
         rua: dados.rua,
         numero: dados.numero,
@@ -119,6 +121,7 @@ export async function atualizarRequisicaoService(
     arvoreId: string;
     nomeBeneficiario: string;
     telefoneBeneficiario: string;
+    emailBeneficiario?: string | undefined;
     rua: string;
     numero: string;
     bairro: string;
@@ -203,6 +206,7 @@ export async function atualizarRequisicaoService(
 
         nomeBeneficiario: dados.nomeBeneficiario,
         telefoneBeneficiario: dados.telefoneBeneficiario,
+        emailBeneficiario: dados.emailBeneficiario ?? '',
 
         rua: dados.rua,
         numero: dados.numero,

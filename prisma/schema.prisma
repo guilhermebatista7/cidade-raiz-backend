@@ -94,6 +94,7 @@ model Requisicao {
 
   nomeBeneficiario     String?
   telefoneBeneficiario String?
+  emailBeneficiario    String?
 
   cidadeId String @db.Uuid
   cidade   Cidade @relation(fields: [cidadeId], references: [id])
