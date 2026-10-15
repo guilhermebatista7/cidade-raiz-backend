@@ -48,10 +48,10 @@ export const dadosRelatorioService = async (
   }
 
   const cidadeId = usuarioLogado.role === Role.GLOBAL
-      ? cidadeIdFiltro
-      : usuarioLogado.cidadeId!;
+    ? cidadeIdFiltro
+    : usuarioLogado.cidadeId!;
 
-  if(!cidadeId){
+  if (!cidadeId) {
     return
   }
 
@@ -75,6 +75,8 @@ export const dadosRelatorioService = async (
     totalPublicacoes,
     requisicoesPorStatus,
     requisicoesPorAtendimento,
+    bairrosConhecidos,
+    requisicoesPorBairro,
   ] = await prisma.$transaction([
     prisma.requisicao.findMany({
       where: whereRequisicao,
@@ -147,6 +149,32 @@ export const dadosRelatorioService = async (
         _all: true,
       },
     }),
+
+    prisma.requisicao.groupBy({
+      by: ["bairro"],
+      where: {
+        cidadeId,
+        bairro: {
+          not: "",
+        },
+      },
+      _count: {
+        _all: true,
+      },
+    }),
+
+    prisma.requisicao.groupBy({
+      by: ["bairro", "status"],
+      where: {
+        ...whereRequisicao,
+        bairro: {
+          not: "",
+        },
+      },
+      _count: {
+        _all: true,
+      },
+    }),
   ]);
 
   // 5. Contagem de cada status
@@ -167,6 +195,44 @@ export const dadosRelatorioService = async (
     atendimentos[item.tipoAtendimento] = item._count._all;
   });
 
+  type BairroStatus = {
+    bairro: string;
+    quantidade: number;
+    status: Record<StatusRequisicao, number>;
+  };
+
+  const bairrosMap = new Map<string, BairroStatus>();
+
+  // Inicializa todos os bairros conhecidos
+  bairrosConhecidos.forEach((item) => {
+    bairrosMap.set(item.bairro, {
+      bairro: item.bairro,
+      quantidade: 0,
+      status: Object.fromEntries(
+        Object.values(StatusRequisicao).map(
+          (status) => [status, 0]
+        )
+      ) as Record<StatusRequisicao, number>,
+    });
+  });
+
+  // Preenche a quantidade de cada status por bairro
+  requisicoesPorBairro.forEach((item) => {
+    const bairro = bairrosMap.get(item.bairro);
+
+    if (!bairro) return;
+
+    const quantidade = item._count._all;
+
+    bairro.status[item.status as StatusRequisicao] = quantidade;
+    bairro.quantidade += quantidade;
+  });
+
+  // Ordena pela quantidade total de requisições
+  const bairros = [...bairrosMap.values()].sort(
+    (a, b) => b.quantidade - a.quantidade
+  );
+
   // 7. Retorno
   return {
     periodo: {
@@ -184,6 +250,8 @@ export const dadosRelatorioService = async (
     requisicoesPorStatus: status,
 
     requisicoesPorAtendimento: atendimentos,
+
+    requisicoesPorBairro: bairros,
 
     requisicoes,
   };
