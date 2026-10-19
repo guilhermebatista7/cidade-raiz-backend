@@ -119,6 +119,6 @@ export async function desativarUsuario(req: Request, res: Response) {
     const cidadeDesativada = await desativarUsuarioService(req.usuario, id);
     return res.status(200).json(cidadeDesativada)
   } catch (error) {
-    return res.status(500).json({ message: "Erro ao desativar usuário" })
+    return res.status(500).json({ message: `Erro ao desativar usuário, ${error}` })
   }
 }

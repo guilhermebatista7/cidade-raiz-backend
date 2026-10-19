@@ -109,7 +109,6 @@ export async function atualizarUsuarioService(usuarioLogado: Request['usuario'],
   })
 }
 
-
 export async function desativarUsuarioService(usuarioLogado: Request['usuario'], id: string) {
 
   if (!usuarioLogado) {
@@ -122,7 +121,7 @@ export async function desativarUsuarioService(usuarioLogado: Request['usuario'],
     throw new Error("Usuário não encontrado");
   }
 
-  if (usuarioLogado.role !== Role.GLOBAL && usuarioExistente.role !== Role.FUNCIONARIO) {
+  if (usuarioLogado.role !== Role.GLOBAL && (usuarioExistente.role !== Role.FUNCIONARIO && usuarioExistente.role !== Role.ADMIN_LOCAL)) {
     throw new Error("Ação não permitida");
   }
 
@@ -144,6 +143,10 @@ export async function ativarUsuarioService(usuarioLogado: Request['usuario'], id
 
   if (!usuarioExistente) {
     throw new Error("Uusário não encontrado");
+  }
+
+  if (usuarioLogado.role !== Role.GLOBAL && (usuarioExistente.role !== Role.FUNCIONARIO && usuarioExistente.role !== Role.ADMIN_LOCAL)) {
+    throw new Error("Ação não permitida");
   }
 
   return await prisma.usuario.update({
