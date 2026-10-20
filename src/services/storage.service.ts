@@ -88,7 +88,7 @@ export function obterUrlPublica(
 export async function obterUrlAssinada(
   bucket: string,
   filePath: string,
-  expiresIn: number = 60
+  expiresIn: number = 300
 ): Promise<string> {
   const { data, error } = await supabase.storage
     .from(bucket)
