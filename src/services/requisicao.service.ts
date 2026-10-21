@@ -326,6 +326,55 @@ async function adicionarUrlsArquivos(requisicao: any) {
   };
 }
 
+export async function gerarUrlComprovanteService(
+  requisicaoId: string,
+  usuarioLogado: {
+    id: string;
+    cidadeId: string | null;
+    role: Role;
+  }
+): Promise<string> {
+  const requisicao = await prisma.requisicao.findUnique({
+    where: { id: requisicaoId },
+    select: {
+      id: true,
+      cidadeId: true,
+      comprovanteResidenciaUrl: true,
+    },
+  });
+
+  if (!requisicao) {
+    throw new Error("Requisição não encontrada");
+  }
+
+  // Somente o perfil GLOBAL pode acessar requisições de qualquer cidade.
+  // Os demais perfis administrativos precisam pertencer à cidade da requisição.
+  const podeAcessar =
+    usuarioLogado.role === Role.GLOBAL ||
+    (
+      (
+        usuarioLogado.role === Role.ADMIN_LOCAL ||
+        usuarioLogado.role === Role.FUNCIONARIO
+      ) &&
+      !!usuarioLogado.cidadeId &&
+      usuarioLogado.cidadeId === requisicao.cidadeId
+    );
+
+  if (!podeAcessar) {
+    throw new Error("Acesso não permitido");
+  }
+
+  if (!requisicao.comprovanteResidenciaUrl) {
+    throw new Error("Comprovante não encontrado");
+  }
+
+  return obterUrlAssinada(
+    "box",
+    requisicao.comprovanteResidenciaUrl,
+    300
+  );
+}
+
 export const listarReqService = async (usuarioLogado: { id: string, cidadeId: string | null, role: Role, email: string }, dataInicial: string, datafinal: string) => {
 
   const include = {
@@ -615,21 +664,21 @@ export const alterarRequisicaoService = async (requisicaoId: string, status: Sta
     })
 
     //Se estado anterior da req é Solicitado, o processo já foi iniciado
-    if(requisicaoAtual.status === StatusRequisicao.SOLICITADO){
+    if (requisicaoAtual.status === StatusRequisicao.SOLICITADO) {
       await tx.arvore.update({
-        where: {id: arvore.id},
+        where: { id: arvore.id },
         data: {
-          quantidade: arvore.quantidade - 1,  
+          quantidade: arvore.quantidade - 1,
         }
       })
     }
 
     //Se requisição é alterada para solicitado, retorna quantidade da árvore
-    if(status === StatusRequisicao.SOLICITADO){
+    if (status === StatusRequisicao.SOLICITADO) {
       await tx.arvore.update({
-        where: {id: arvore.id},
+        where: { id: arvore.id },
         data: {
-          quantidade: arvore.quantidade + 1,  
+          quantidade: arvore.quantidade + 1,
         }
       })
     }

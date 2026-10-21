@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { requisicaoSchema } from "../schemas/requisicao.schema.js";
-import { agendarRequisicaoService, alterarRequisicaoService, atualizarFotoPlantioService, atualizarRequisicaoService, criarRequisicaoService, listarReqCidadeService, listarReqService, listarReqUsuarioService, recusarRequisicaoService } from "../services/requisicao.service.js";
+import { agendarRequisicaoService, alterarRequisicaoService, atualizarFotoPlantioService, atualizarRequisicaoService, criarRequisicaoService, gerarUrlComprovanteService, listarReqCidadeService, listarReqService, listarReqUsuarioService, recusarRequisicaoService } from "../services/requisicao.service.js";
 import type { ArquivoMulter } from "../services/storage.service.js";
 
 export async function criarRequisicao(req: Request, res: Response) {
@@ -160,7 +160,7 @@ export const buscarRequisicoes = async (req: Request, res: Response) => {
         message: "Usuário não autencticado"
       });
     }
-    
+
     const { dataInicial, dataFinal } = req.query;
 
     if (typeof dataInicial !== 'string' || typeof dataFinal !== 'string') {
@@ -212,6 +212,58 @@ export const buscarRequisicoesPorUsuario = async (req: Request, res: Response) =
 
   } catch (error) {
     return res.status(500).json({ message: `Erro ao listar requisições ${error}` })
+  }
+}
+
+
+export async function buscarUrlComprovante(
+  req: Request,
+  res: Response
+) {
+  const { id } = req.params;
+
+  if (typeof id !== "string") {
+    return res.status(400).json({
+      message: "ID da requisição inválido",
+    });
+  }
+
+  if (!req.usuario) {
+    return res.status(401).json({
+      message: "Usuário não autenticado",
+    });
+  }
+
+  try {
+    const url = await gerarUrlComprovanteService(
+      id,
+      req.usuario
+    );
+
+    return res.status(200).json({ url });
+  } catch (error) {
+    const mensagem =
+      error instanceof Error
+        ? error.message
+        : "Erro ao gerar URL do comprovante";
+
+    if (mensagem === "Requisição não encontrada") {
+      return res.status(404).json({ message: mensagem });
+    }
+
+    if (mensagem === "Comprovante não encontrado") {
+      return res.status(404).json({ message: mensagem });
+    }
+
+    if (mensagem === "Acesso não permitido") {
+      return res.status(403).json({ message: mensagem });
+    }
+
+    console.error("Erro ao gerar URL do comprovante:", error);
+
+    return res.status(500).json({
+      message: "Erro ao gerar URL do comprovante",
+    });
   }
 }
 
