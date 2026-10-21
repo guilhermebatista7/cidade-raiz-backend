@@ -483,11 +483,14 @@ export const listarReqCidadeService = async (cidadeId: string, usuarioLogado: { 
   return [];
 }
 
-export const listarReqUsuarioService = async (usuarioLogado: { id: string }) => {
+export const listarReqUsuarioService = async (usuarioLogado: { id: string }, dataInicial: string, dataFinal: string) => {
 
   if (!usuarioLogado.id) {
     throw new Error("Usuário não autenticado");
   }
+
+  const inicio = new Date(`${dataInicial}T00:00:00.000Z`);
+  const fim = new Date(`${dataFinal}T23:59:59.999Z`);
 
   const include = {
     cidade: {
@@ -524,6 +527,10 @@ export const listarReqUsuarioService = async (usuarioLogado: { id: string }) => 
   const requisicoes = await prisma.requisicao.findMany({
     where: {
       criadoPorId: usuarioLogado.id,
+      criadoEm: {
+        gte: inicio,
+        lte: fim,
+      }
     },
     orderBy: {
       criadoEm: 'desc'

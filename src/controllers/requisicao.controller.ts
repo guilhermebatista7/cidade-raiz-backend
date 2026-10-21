@@ -207,7 +207,22 @@ export const buscarRequisicoesPorUsuario = async (req: Request, res: Response) =
         message: "Usuário não autencticado"
       });
     }
-    const requisicoes = await listarReqUsuarioService(req.usuario);
+
+    const { dataInicial, dataFinal } = req.query;
+
+    if (
+      typeof dataInicial !== "string" ||
+      typeof dataFinal !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(dataInicial) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(dataFinal) ||
+      dataInicial > dataFinal
+    ) {
+      return res.status(400).json({
+        message: "Informe um período de datas válido",
+      });
+    }
+
+    const requisicoes = await listarReqUsuarioService(req.usuario, dataInicial, dataFinal);
     return res.status(200).json(requisicoes);
 
   } catch (error) {
