@@ -61,6 +61,7 @@ model Cidade {
   usuarios    Usuario[]
   requisicoes Requisicao[]
   arvores     Arvore[]
+  enderecos   Endereco[]
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -122,8 +123,31 @@ model Requisicao {
   comprovanteResidenciaUrl String?
   fotoPlantioUrl           String?
 
+  enderecoId String?   @db.Uuid
+  endereco   Endereco? @relation(fields: [enderecoId], references: [id])
+
   historico HistoricoRequisicao[]
   publicacao Publicacao[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model Endereco {
+  id String @id @default(uuid()) @db.Uuid
+
+  rua             String
+  numero          String
+  bairro          String
+  cep             String?
+  pontoReferencia String?
+
+  cidadeId String @db.Uuid
+  cidade   Cidade @relation(fields: [cidadeId], references: [id])
+
+  ativo Boolean @default(true)
+
+  requisicoes Requisicao[]
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
