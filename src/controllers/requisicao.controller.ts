@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { requisicaoSchema } from "../schemas/requisicao.schema.js";
-import { agendarRequisicaoService, alterarRequisicaoService, atualizarFotoPlantioService, atualizarRequisicaoService, criarRequisicaoService, gerarUrlComprovanteService, listarReqCidadeService, listarReqService, listarReqUsuarioService, recusarRequisicaoService } from "../services/requisicao.service.js";
+import { agendarRequisicaoService, aguardarRetiradaService, alterarRequisicaoService, atualizarFotoPlantioService, atualizarRequisicaoService, criarRequisicaoService, gerarUrlComprovanteService, listarReqCidadeService, listarReqService, listarReqUsuarioService, recusarRequisicaoService } from "../services/requisicao.service.js";
 import type { ArquivoMulter } from "../services/storage.service.js";
 
 export async function criarRequisicao(req: Request, res: Response) {
@@ -325,6 +325,31 @@ export const agendarPlantio = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       message: "Plantio foi agendado com sucesso",
+    });
+
+  } catch (error) {
+    return res.status(500).json({ message: `Erro ao mudar situação da requisição ${error}` })
+  }
+}
+
+export const aguardarRetirada = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  if (typeof id !== "string") {
+    return res.status(400).json({ message: "ID da requisição inválido" });
+  }
+
+  try {
+    if (!req.usuario) {
+      return res.status(401).json({
+        message: "Usuário não autencticado"
+      });
+    }
+
+    await aguardarRetiradaService(id, req.body.idEndereco, req.usuario);
+
+    return res.status(200).json({
+      message: "Aguardando retirada",
     });
 
   } catch (error) {

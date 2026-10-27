@@ -7,7 +7,7 @@ const router = Router();
 
 router.get(
   "/",
-  verificarRole([Role.GLOBAL, Role.ADMIN_LOCAL]),
+  verificarRole([Role.GLOBAL, Role.ADMIN_LOCAL, Role.FUNCIONARIO]),
   listarEnderecos
 );
 

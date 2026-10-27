@@ -15,7 +15,10 @@ export async function listarEnderecoService(usuarioLogado: { role: Role, cidadeI
     if (usuarioLogado.role === Role.ADMIN_LOCAL) {
         const cidadeId = usuarioLogado.cidadeId || ""
         return await prisma.endereco.findMany({
-            where: { cidadeId },
+            where: { 
+                cidadeId,
+                ativo: true,
+            },
             orderBy: {
                 criadoEm: 'desc'
             },
@@ -34,7 +37,7 @@ export async function listarEnderecoCidadeService(usuarioLogado: { role: Role },
 
     return await prisma.endereco.findMany({
         where: {
-            ...(cidadePreenchida && { cidadeId }),
+            ...(cidadePreenchida && { cidadeId, ativo: true}),
         },
         orderBy: {
             criadoEm: 'desc'

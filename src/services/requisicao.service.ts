@@ -398,6 +398,16 @@ export const listarReqService = async (usuarioLogado: { id: string, cidadeId: st
         nomePopular: true,
       },
     },
+    endereco: {
+      select: {
+        id: true,
+        rua: true,
+        bairro: true,
+        numero: true, 
+        cep: true,
+        pontoReferencia: true
+      }
+    }
   };
 
   if (usuarioLogado.role === Role.ADMIN_LOCAL || usuarioLogado.role === Role.FUNCIONARIO) {
@@ -455,6 +465,16 @@ export const listarReqCidadeService = async (cidadeId: string, usuarioLogado: { 
         nomePopular: true,
       },
     },
+    endereco: {
+      select: {
+        id: true,
+        rua: true,
+        bairro: true,
+        numero: true, 
+        cep: true,
+        pontoReferencia: true
+      }
+    }
   };
 
   if (usuarioLogado.role === Role.GLOBAL) {
@@ -615,6 +635,47 @@ export const agendarRequisicaoService = async (requisicaoId: string, dataInicial
       statusAnterior: requisicaoAtual.status,
       statusNovo: StatusRequisicao.AGENDADO_PLANTIO,
       observacao: "Requisição agendada com sucesso",
+    }
+  })
+}
+
+export const aguardarRetiradaService = async (requisicaoId: string, idEndereco: string, usuarioLogado: { id: string, cidadeId: string | null, role: Role }) => {
+  if (!usuarioLogado) {
+    throw new Error("Usuário não autenticado");
+  }
+
+  if (usuarioLogado.role !== Role.GLOBAL && typeof usuarioLogado.cidadeId !== 'string') {
+    throw new Error("Ação não permitida");
+  }
+
+  //BUSCAR REQUISIÇÃO ATUAL
+  const requisicaoAtual = await prisma.requisicao.findUnique({
+    where: { id: requisicaoId },
+  });
+
+  if (!requisicaoAtual) {
+    throw new Error("Requisição não encontrada");
+  }
+
+  if ((requisicaoAtual.cidadeId !== usuarioLogado.cidadeId) && usuarioLogado.role !== Role.GLOBAL) {
+    throw new Error("Ação não permitida");
+  }
+
+  await prisma.requisicao.update({
+    where: { id: requisicaoId },
+    data: {
+      status: StatusRequisicao.AGUARDANDO_RETIRADA,
+      enderecoId: idEndereco
+    }
+  })
+
+  await prisma.historicoRequisicao.create({
+    data: {
+      requisicaoId: requisicaoAtual.id,
+      usuarioId: usuarioLogado.id,
+      statusAnterior: requisicaoAtual.status,
+      statusNovo: StatusRequisicao.AGUARDANDO_RETIRADA,
+      observacao: "Requisição aguardando retirada",
     }
   })
 }
