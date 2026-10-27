@@ -541,6 +541,16 @@ export const listarReqUsuarioService = async (usuarioLogado: { id: string }, dat
         observacao: true,
         criadoEm: true,
       }
+    },
+    endereco: {
+      select: {
+        id: true,
+        rua: true,
+        bairro: true,
+        numero: true,
+        cep: true,
+        pontoReferencia: true
+      }
     }
   };
 
