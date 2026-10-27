@@ -128,3 +128,26 @@ export async function atualizarEnderecoCidadeService(usuarioLogado: Request['usu
     })
 }
 
+export async function alterarStatusEnderecoService(usuarioLogado: Request['usuario'], id: string) {
+
+  if (!usuarioLogado) {
+    throw new Error("Usuário não autenticado");
+  }
+
+  const enderecoExistente = await prisma.endereco.findUnique({ where: { id } });
+
+  if (!enderecoExistente) {
+    throw new Error("Endereço não encontrado");
+  }
+
+  if ((usuarioLogado.cidadeId !== enderecoExistente.cidadeId) && usuarioLogado.role !== Role.GLOBAL){
+    throw new Error("Ação não permitida");
+  }
+
+  return await prisma.endereco.update({
+    where: { id },
+    data: {
+      ativo: !enderecoExistente.ativo,
+    }
+  });
+}

@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { Role } from "../generated/prisma/enums.js";
 import { enderecoSchema } from "../schemas/endereco.schema.js";
-import { atualizarEnderecoCidadeService, atualizarEnderecoService, criarEnderecoCidadeService, criarEnderecoService, listarEnderecoCidadeService, listarEnderecoService } from "../services/endereco.service.js";
+import { alterarStatusEnderecoService, atualizarEnderecoCidadeService, atualizarEnderecoService, criarEnderecoCidadeService, criarEnderecoService, listarEnderecoCidadeService, listarEnderecoService } from "../services/endereco.service.js";
 
 export async function listarEnderecos(req: Request, res: Response) {
     try {
@@ -122,4 +122,19 @@ export async function atualizarEndereco(req: Request, res: Response) {
     } catch (error) {
         return res.status(500).json({ message: `Erro ao atualizar endereço, ${error}` });
     }
+}
+
+export async function alterarStatusEndereco(req: Request, res: Response) {
+  const { idEndereco } = req.params;
+
+  if (typeof idEndereco !== "string") {
+    return res.status(400).json({ message: "ID inválido" });
+  }
+
+  try {
+    const enderecoAtivado = await alterarStatusEnderecoService(req.usuario, idEndereco);
+    return res.status(200).json(enderecoAtivado)
+  } catch (error) {
+    return res.status(500).json({ message: "Erro ao ativar cidade" })
+  }
 }

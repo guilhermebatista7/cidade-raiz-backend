@@ -1,4 +1,4 @@
-import { atualizarEndereco, criarEndereco, criarEnderecoCidade, listarEnderecos, listarEnderecosCidade } from "../controllers/endereco.controller.js";
+import { alterarStatusEndereco, atualizarEndereco, criarEndereco, criarEnderecoCidade, listarEnderecos, listarEnderecosCidade } from "../controllers/endereco.controller.js";
 import { Role } from "../generated/prisma/enums.js";
 import { verificarRole } from "../middlewares/auth.middlewares.js";
 import { Router } from "express";
@@ -6,7 +6,7 @@ import { Router } from "express";
 const router = Router();
 
 router.get(
-  "/", 
+  "/",
   verificarRole([Role.GLOBAL, Role.ADMIN_LOCAL]),
   listarEnderecos
 );
@@ -18,15 +18,15 @@ router.get(
 )
 
 router.post(
-    "/",
-    verificarRole([Role.GLOBAL, Role.ADMIN_LOCAL]),
-    criarEndereco
+  "/",
+  verificarRole([Role.GLOBAL, Role.ADMIN_LOCAL]),
+  criarEndereco
 )
 
 router.post(
-    "/cidade/:cidadeId",
-    verificarRole([Role.GLOBAL]),
-    criarEnderecoCidade
+  "/cidade/:cidadeId",
+  verificarRole([Role.GLOBAL]),
+  criarEnderecoCidade
 )
 
 router.put(
@@ -42,15 +42,9 @@ router.put(
 )
 
 router.put(
-  "/ativar/:id",
+  "/status/:idEndereco",
   verificarRole([Role.GLOBAL, Role.ADMIN_LOCAL]),
- // ativarUsuario
-)
-
-router.put(
-  "/desativar/:id",
-  verificarRole([Role.GLOBAL, Role.ADMIN_LOCAL]),
-  //desativarUsuario
+  alterarStatusEndereco
 )
 
 export default router;

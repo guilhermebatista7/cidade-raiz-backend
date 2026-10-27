@@ -142,7 +142,7 @@ export async function ativarUsuarioService(usuarioLogado: Request['usuario'], id
   const usuarioExistente = await prisma.usuario.findUnique({ where: { id } });
 
   if (!usuarioExistente) {
-    throw new Error("Uusário não encontrado");
+    throw new Error("Usário não encontrado");
   }
 
   if (usuarioLogado.role !== Role.GLOBAL && (usuarioExistente.role !== Role.FUNCIONARIO && usuarioExistente.role !== Role.ADMIN_LOCAL)) {
