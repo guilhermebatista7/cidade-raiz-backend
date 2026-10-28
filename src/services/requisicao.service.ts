@@ -69,6 +69,16 @@ export async function criarRequisicaoService(
     throw new Error(`Estoque da árvore ${arvore.nomePopular} está esgotado`);
   }
 
+  const cidade = await prisma.cidade.findUnique({
+    where: {
+      id: dados.cidadeId,
+    }
+  })
+
+  if (!cidade?.permiteEntrega && dados.tipoAtendimento === 'PLANTIO_AGENDADO') {
+    throw new Error("A cidade selecionada não oferece plantio no local. As mudas estão disponíveis apenas para retirada.");
+  }
+
   return await prisma.$transaction(async (tx) => {
     // 1. Cria a requisição
     const requisicao = await tx.requisicao.create({
@@ -403,7 +413,7 @@ export const listarReqService = async (usuarioLogado: { id: string, cidadeId: st
         id: true,
         rua: true,
         bairro: true,
-        numero: true, 
+        numero: true,
         cep: true,
         pontoReferencia: true
       }
@@ -470,7 +480,7 @@ export const listarReqCidadeService = async (cidadeId: string, usuarioLogado: { 
         id: true,
         rua: true,
         bairro: true,
-        numero: true, 
+        numero: true,
         cep: true,
         pontoReferencia: true
       }
@@ -621,12 +631,26 @@ export const agendarRequisicaoService = async (requisicaoId: string, dataInicial
   }
 
   //BUSCAR REQUISIÇÃO ATUAL
+  const include = {
+    cidade: {
+      select: {
+        id: true,
+        permiteEntrega: true,
+      },
+    },
+  };
+
   const requisicaoAtual = await prisma.requisicao.findUnique({
     where: { id: requisicaoId },
+    include
   });
 
   if (!requisicaoAtual) {
     throw new Error("Requisição não encontrada");
+  }
+
+  if (!requisicaoAtual.cidade.permiteEntrega) {
+    throw new Error("A cidade selecionada não oferece plantio no local. As mudas estão disponíveis apenas para retirada.");
   }
 
   await prisma.requisicao.update({
