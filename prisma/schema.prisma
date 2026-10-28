@@ -66,6 +66,7 @@ model Cidade {
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
   ativa        Boolean
+  permiteEntrega Boolean @default(false) 
 }
 
 model Arvore {

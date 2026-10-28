@@ -71,18 +71,19 @@ export async function listarCidadesAtivasService(){
   })
 }
 
-export async function criarCidadeService(dados: { nome: string; uf: string;}) {
+export async function criarCidadeService(dados: { nome: string; uf: string; permiteEntrega: boolean}) {
 
   return await prisma.cidade.create({
     data: {
       nome: dados.nome,
       uf: dados.uf,
+      permiteEntrega: dados.permiteEntrega,
       ativa: true,
     }
   });
 }
 
-export async function atualizarCidadeService(id: string, dados: { nome: string; uf: string; }) {
+export async function atualizarCidadeService(id: string, dados: { nome: string; uf: string; permiteEntrega: boolean}) {
   const cidadeExistente = await prisma.cidade.findUnique({ where: { id } });
   if (!cidadeExistente) {
     throw new Error("Cidade não encontrada");
@@ -92,7 +93,8 @@ export async function atualizarCidadeService(id: string, dados: { nome: string; 
     where: { id },
     data: {
       nome: dados.nome,
-      uf: dados.uf
+      uf: dados.uf,
+      permiteEntrega: dados.permiteEntrega,
     }
   });
 }
