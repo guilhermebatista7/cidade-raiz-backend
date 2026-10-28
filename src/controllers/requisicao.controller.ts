@@ -7,7 +7,6 @@ export async function criarRequisicao(req: Request, res: Response) {
   const validacao = requisicaoSchema.safeParse(req.body);
 
   if (!validacao.success) {
-    console.log("ERRO ZOD:");
     console.dir(validacao.error.flatten(), {
       depth: null,
     });
@@ -68,7 +67,6 @@ export async function atualizarRequisicao(req: Request, res: Response) {
   const validacao = requisicaoSchema.safeParse(req.body);
 
   if (!validacao.success) {
-    console.log("ERRO ZOD:");
     console.dir(validacao.error.flatten(), {
       depth: null,
     });

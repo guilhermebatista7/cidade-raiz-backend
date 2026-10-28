@@ -12,7 +12,6 @@ export async function listarCidades(req: Request, res: Response) {
     const cidades = await listarCidadesService(req.usuario);
     return res.status(200).json(cidades);
   } catch (error) {
-    console.log('Erro ao listar cidades', error);
     return res.status(500).json({ message: "Erro ao listar cidades" });
   }
 }
@@ -27,7 +26,6 @@ export async function listarCidadesUsuario(req: Request, res: Response) {
     const cidades = await listarCidadesUsuarioService(req.usuario);
     return res.status(200).json(cidades);
   } catch (error) {
-    console.log('Erro ao listar cidades', error);
     return res.status(500).json({ message: "Erro ao listar cidades" });
   }
 }
@@ -37,7 +35,6 @@ export async function listarCidadesAtivas(req: Request, res: Response) {
     const cidades = await listarCidadesAtivasService();
     return res.status(200).json(cidades);
   } catch (error) {
-    console.log('Erro ao listar cidades', error);
     return res.status(500).json({ message: "Erro ao listar cidades" });
   }
 }
