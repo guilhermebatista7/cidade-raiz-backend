@@ -1,3 +1,4 @@
+import type { Prisma } from "../generated/prisma/client.js";
 import { Role, StatusRequisicao, type TipoAtendimento } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/prisma.js";
 import {
@@ -443,7 +444,7 @@ export const listarReqService = async (usuarioLogado: { id: string, cidadeId: st
         }
       },
       orderBy: {
-        criadoEm: 'desc'
+        criadoEm: 'asc'
       },
       include,
     });
@@ -504,7 +505,7 @@ export const listarReqCidadeService = async (cidadeId: string, usuarioLogado: { 
         }
       },
       orderBy: {
-        criadoEm: 'desc'
+        criadoEm: 'asc'
       },
       include,
     });
@@ -749,7 +750,32 @@ export const alterarRequisicaoService = async (requisicaoId: string, status: Sta
   }
 
   return await prisma.$transaction(async (tx) => {
-    await tx.requisicao.update({
+
+    const statusAnterior = requisicaoAtual.status;
+
+    // Só debita quando inicia o processamento.
+    if (
+      statusAnterior === StatusRequisicao.SOLICITADO &&
+      status !== StatusRequisicao.SOLICITADO
+    ) {
+      await debitarEstoqueArvore(
+        tx,
+        requisicaoAtual.arvoreId
+      );
+    }
+
+    // Só devolve se a requisição voltar para SOLICITADO.
+    if (
+      statusAnterior !== StatusRequisicao.SOLICITADO &&
+      status === StatusRequisicao.SOLICITADO
+    ) {
+      await devolverEstoqueArvore(
+        tx,
+        requisicaoAtual.arvoreId
+      );
+    }
+
+    const requisicaoAtualizada = await tx.requisicao.update({
       where: { id: requisicaoId },
       data: {
         status
@@ -766,25 +792,46 @@ export const alterarRequisicaoService = async (requisicaoId: string, status: Sta
       }
     })
 
-    //Se estado anterior da req é Solicitado, o processo já foi iniciado
-    if (requisicaoAtual.status === StatusRequisicao.SOLICITADO) {
-      await tx.arvore.update({
-        where: { id: arvore.id },
-        data: {
-          quantidade: arvore.quantidade - 1,
-        }
-      })
-    }
-
-    //Se requisição é alterada para solicitado, retorna quantidade da árvore
-    if (status === StatusRequisicao.SOLICITADO) {
-      await tx.arvore.update({
-        where: { id: arvore.id },
-        data: {
-          quantidade: arvore.quantidade + 1,
-        }
-      })
-    }
+    return requisicaoAtualizada;
 
   })
+}
+
+async function debitarEstoqueArvore(
+  tx: Prisma.TransactionClient,
+  arvoreId: string
+) {
+  const resultado = await tx.arvore.updateMany({
+    where: {
+      id: arvoreId,
+      quantidade: {
+        gt: 0,
+      },
+    },
+    data: {
+      quantidade: {
+        decrement: 1,
+      },
+    },
+  });
+
+  if (resultado.count === 0) {
+    throw new Error("Estoque da árvore esgotado");
+  }
+}
+
+async function devolverEstoqueArvore(
+  tx: Prisma.TransactionClient,
+  arvoreId: string
+) {
+  await tx.arvore.update({
+    where: {
+      id: arvoreId,
+    },
+    data: {
+      quantidade: {
+        increment: 1,
+      },
+    },
+  });
 }
