@@ -121,7 +121,7 @@ export async function desativarUsuarioService(usuarioLogado: Request['usuario'],
     throw new Error("Usuário não encontrado");
   }
 
-  if (usuarioLogado.role !== Role.GLOBAL && (usuarioExistente.role !== Role.FUNCIONARIO && usuarioExistente.role !== Role.ADMIN_LOCAL)) {
+  if (usuarioLogado.role !== Role.GLOBAL && (usuarioExistente.cidadeId !== usuarioLogado.cidadeId)) {
     throw new Error("Ação não permitida");
   }
 
@@ -145,7 +145,7 @@ export async function ativarUsuarioService(usuarioLogado: Request['usuario'], id
     throw new Error("Usário não encontrado");
   }
 
-  if (usuarioLogado.role !== Role.GLOBAL && (usuarioExistente.role !== Role.FUNCIONARIO && usuarioExistente.role !== Role.ADMIN_LOCAL)) {
+  if (usuarioLogado.role !== Role.GLOBAL && (usuarioExistente.cidadeId !== usuarioLogado.cidadeId)) {
     throw new Error("Ação não permitida");
   }
 

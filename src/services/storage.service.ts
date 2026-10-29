@@ -1,4 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { supabase } from "../lib/supabase.js";
+import { fileTypeFromBuffer } from "file-type";
 
 export interface ArquivoMulter {
   originalname: string;
@@ -12,27 +14,57 @@ export interface ArquivoStorage {
   publicUrl: string | null;
 }
 
+const TIPOS_PERMITIDOS = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "application/pdf": "pdf",
+} as const;
+
 export async function uploadArquivoSupabase(
   file: ArquivoMulter,
   bucket: string,
   pasta: string,
   publico: boolean = false
 ): Promise<ArquivoStorage> {
-  const fileExt =
-    file.originalname.split(".").pop()?.toLowerCase() || "bin";
 
-  const randomString = Math.random()
-    .toString(36)
-    .substring(2, 9);
+  const tamanhoMaximo = 5 * 1024 * 1024;
 
-  const fileName = `${Date.now()}-${randomString}.${fileExt}`;
+  if (!file.buffer || file.buffer.length === 0) {
+    throw new Error("Arquivo vazio ou inválido.");
+  }
 
+  if (file.buffer.length > tamanhoMaximo) {
+    throw new Error("Arquivo excede o limite de 5 MB.");
+  }
+
+  // Verifica o conteúdo real, não apenas a extensão.
+  const tipoReal = await fileTypeFromBuffer(file.buffer);
+
+  if (
+    !tipoReal ||
+    !(tipoReal.mime in TIPOS_PERMITIDOS)
+  ) {
+    throw new Error("Conteúdo de arquivo não permitido.");
+  }
+
+  // O MIME declarado precisa corresponder ao conteúdo.
+  if (file.mimetype !== tipoReal.mime) {
+    throw new Error("O tipo declarado não corresponde ao arquivo.");
+  }
+
+  const extensao =
+    TIPOS_PERMITIDOS[
+    tipoReal.mime as keyof typeof TIPOS_PERMITIDOS
+    ];
+
+  // Nome gerado pelo servidor, sem usar originalname.
+  const fileName = `${randomUUID()}.${extensao}`;
   const filePath = `${pasta}/${fileName}`;
 
   const { error } = await supabase.storage
     .from(bucket)
     .upload(filePath, file.buffer, {
-      contentType: file.mimetype,
+      contentType: tipoReal.mime,
       upsert: false,
     });
 

@@ -10,6 +10,7 @@ import requisicaoRouter from './routes/requisicao.routes.js';
 import blogRouter from './routes/blog.routes.js';
 import relatorioRouter from './routes/relatorio.routes.js';
 import enderecoRouter from './routes/endereco.routes.js';
+import { tratarErroUpload } from './middlewares/upload-error.middleware.js';
 
 
 const app = express();
@@ -32,5 +33,7 @@ app.use("/api/requisicao", requisicaoRouter);
 app.use("/api/blog", blogRouter);
 app.use("/api/relatorio", relatorioRouter);
 app.use("/api/endereco", enderecoRouter);
+
+app.use(tratarErroUpload);
 
 export default app;

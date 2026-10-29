@@ -1,5 +1,4 @@
 import { Router } from "express";
-import multer from "multer";
 import { 
   listarArvores, 
   criarArvore, 
@@ -9,8 +8,8 @@ import {
 } from "../controllers/arvore.controller.js";
 import { verificarRole } from "../middlewares/auth.middlewares.js";
 import { Role } from "../generated/prisma/enums.js";
+import { uploadImagem } from "../middlewares/upload.middleware.js";
 
-const upload = multer({ storage: multer.memoryStorage() });
 const router = Router();
 
 router.get(
@@ -28,14 +27,14 @@ router.get(
 router.post(
   "/", 
   verificarRole([Role.FUNCIONARIO, Role.ADMIN_LOCAL, Role.GLOBAL]), 
-  upload.single("imagem"), 
+  uploadImagem.single("image"),
   criarArvore
 );
 
 router.put(
   "/:id", 
   verificarRole([Role.FUNCIONARIO, Role.ADMIN_LOCAL, Role.GLOBAL]), 
-  upload.single("imagem"), 
+  uploadImagem.single("image"),
   atualizarArvore
 );
 

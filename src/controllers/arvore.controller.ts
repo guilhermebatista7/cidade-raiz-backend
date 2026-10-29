@@ -39,6 +39,13 @@ export async function listarArvoresCidade(req: Request, res: Response) {
 }
 
 export async function criarArvore(req: Request, res: Response) {
+
+  if (!req.usuario) {
+    return res.status(401).json({
+      message: "Usuário não autenticado",
+    });
+  }
+
   const validacao = arvoreSchema.safeParse(req.body);
 
   if (!validacao.success) {
@@ -49,7 +56,7 @@ export async function criarArvore(req: Request, res: Response) {
   }
 
   try {
-    const novaArvore = await criarArvoreService(validacao.data, req.file);
+    const novaArvore = await criarArvoreService(req.usuario, validacao.data, req.file);
     return res.status(201).json(novaArvore);
   } catch (error: any) {
     console.error("ERRO AO CRIAR ÁRVORE:", error);

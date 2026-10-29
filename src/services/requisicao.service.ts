@@ -156,6 +156,10 @@ export async function atualizarRequisicaoService(
     throw new Error("Requisição não encontrada");
   }
 
+  if (requisicaoAtual.criadoPorId !== usuarioLogado.id) {
+    throw new Error("Ação não permitida");
+  }
+
   //MANTER OS ARQUIVOS EXISTENTES POR PADRÃO
   let fotoLocalPath =
     requisicaoAtual.fotoLocalUrl;
@@ -589,9 +593,6 @@ export const recusarRequisicaoService = async (requisicaoId: string, observacaoS
     throw new Error("Usuário não autenticado");
   }
 
-  if (usuarioLogado.role !== Role.GLOBAL && typeof usuarioLogado.cidadeId !== 'string') {
-    throw new Error("Ação não permitida");
-  }
 
   //BUSCAR REQUISIÇÃO ATUAL
   const requisicaoAtual = await prisma.requisicao.findUnique({
@@ -600,6 +601,10 @@ export const recusarRequisicaoService = async (requisicaoId: string, observacaoS
 
   if (!requisicaoAtual) {
     throw new Error("Requisição não encontrada");
+  }
+
+  if (usuarioLogado.role !== Role.GLOBAL && typeof usuarioLogado.cidadeId !== requisicaoAtual.cidadeId) {
+    throw new Error("Ação não permitida");
   }
 
   await prisma.requisicao.update({
@@ -626,10 +631,6 @@ export const agendarRequisicaoService = async (requisicaoId: string, dataInicial
     throw new Error("Usuário não autenticado");
   }
 
-  if (usuarioLogado.role !== Role.GLOBAL && typeof usuarioLogado.cidadeId !== 'string') {
-    throw new Error("Ação não permitida");
-  }
-
   //BUSCAR REQUISIÇÃO ATUAL
   const include = {
     cidade: {
@@ -647,6 +648,10 @@ export const agendarRequisicaoService = async (requisicaoId: string, dataInicial
 
   if (!requisicaoAtual) {
     throw new Error("Requisição não encontrada");
+  }
+
+  if (usuarioLogado.role !== Role.GLOBAL && typeof usuarioLogado.cidadeId !== requisicaoAtual.cidadeId) {
+    throw new Error("Ação não permitida");
   }
 
   if (!requisicaoAtual.cidade.permiteEntrega) {
@@ -678,10 +683,6 @@ export const aguardarRetiradaService = async (requisicaoId: string, idEndereco: 
     throw new Error("Usuário não autenticado");
   }
 
-  if (usuarioLogado.role !== Role.GLOBAL && typeof usuarioLogado.cidadeId !== 'string') {
-    throw new Error("Ação não permitida");
-  }
-
   //BUSCAR REQUISIÇÃO ATUAL
   const requisicaoAtual = await prisma.requisicao.findUnique({
     where: { id: requisicaoId },
@@ -691,7 +692,7 @@ export const aguardarRetiradaService = async (requisicaoId: string, idEndereco: 
     throw new Error("Requisição não encontrada");
   }
 
-  if ((requisicaoAtual.cidadeId !== usuarioLogado.cidadeId) && usuarioLogado.role !== Role.GLOBAL) {
+  if (usuarioLogado.role !== Role.GLOBAL && usuarioLogado.cidadeId !== requisicaoAtual.cidadeId) {
     throw new Error("Ação não permitida");
   }
 
@@ -720,10 +721,6 @@ export const alterarRequisicaoService = async (requisicaoId: string, status: Sta
     throw new Error("Usuário não autenticado");
   }
 
-  if (usuarioLogado.role !== Role.GLOBAL && typeof usuarioLogado.cidadeId !== 'string') {
-    throw new Error("Ação não permitida");
-  }
-
   //BUSCAR REQUISIÇÃO ATUAL
   const requisicaoAtual = await prisma.requisicao.findUnique({
     where: { id: requisicaoId },
@@ -731,6 +728,10 @@ export const alterarRequisicaoService = async (requisicaoId: string, status: Sta
 
   if (!requisicaoAtual) {
     throw new Error("Requisição não encontrada");
+  }
+
+  if (usuarioLogado.role !== Role.GLOBAL && usuarioLogado.cidadeId !== requisicaoAtual.cidadeId) {
+    throw new Error("Ação não permitida");
   }
 
   const arvore = await prisma.arvore.findUnique({

@@ -51,6 +51,10 @@ export async function listarArvoresCidadeService(cidadeId: string) {
 }
 
 export async function criarArvoreService(
+  usuarioLogado: {
+    cidadeId: string | null,
+    role: Role
+  },
   dados: {
     nome: string;
     descricao?: string;
@@ -60,6 +64,10 @@ export async function criarArvoreService(
   file?: ArquivoMulter
 ) {
   let imagemUrl: string | null = null;
+
+  if (usuarioLogado.cidadeId !== dados.cidadeId) {
+    throw new Error(`Ação não permitida`);
+  }
 
   if (file) {
     const imagem = await uploadArquivoSupabase(
