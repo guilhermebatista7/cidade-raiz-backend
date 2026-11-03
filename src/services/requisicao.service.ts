@@ -166,10 +166,6 @@ export async function atualizarRequisicaoService(
     throw new Error("Ação não permitida");
   }
 
-  if (usuarioLogado.role === Role.CIDADAO && requisicaoAtual.criadoPorId !== usuarioLogado.id) {
-    throw new Error("Acesso negado: você só pode editar suas próprias requisições");
-  }
-
   //MANTER OS ARQUIVOS EXISTENTES POR PADRÃO
   let fotoLocalPath =
     requisicaoAtual.fotoLocalUrl;
