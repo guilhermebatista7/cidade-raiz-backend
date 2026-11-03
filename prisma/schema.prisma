@@ -51,6 +51,8 @@ model Usuario {
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
+
+  @@index([cidadeId])
 }
 
 model Cidade {
@@ -86,6 +88,8 @@ model Arvore {
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
+
+  @@index([cidadeId])
 }
 
 model Requisicao {
@@ -132,6 +136,11 @@ model Requisicao {
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
+
+  @@index([cidadeId, criadoEm])
+  @@index([criadoPorId])
+  @@index([status])
+  @@index([arvoreId])
 }
 
 model Endereco {
