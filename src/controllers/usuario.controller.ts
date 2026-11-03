@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { ativarUsuarioService, atualizarUsuarioService, desativarUsuarioService, listarRolesService, listarUsuariosCidadeService, listarUsuariosService } from "../services/usuario.service.js";
-import { usuarioSchema } from "../schemas/usuario.shema.js";
+import { usuarioSchema } from "../schemas/usuario.schema.js";
 import { Role } from "../generated/prisma/enums.js";
 
 export async function listarRoles(req: Request, res: Response) {
