@@ -6,6 +6,12 @@ import type { ArquivoMulter } from "../services/storage.service.js";
 export async function criarRequisicao(req: Request, res: Response) {
   const validacao = requisicaoSchema.safeParse(req.body);
 
+  if (!req.usuario) {
+    return res.status(401).json({
+      message: "Usuário não autencticado"
+    });
+  }
+
   if (!validacao.success) {
     console.dir(validacao.error.flatten(), {
       depth: null,
@@ -38,6 +44,7 @@ export async function criarRequisicao(req: Request, res: Response) {
     }
 
     const novaRequisicao = await criarRequisicaoService(
+      req.usuario,
       validacao.data,
       {
         fotoLocal,

@@ -10,6 +10,7 @@ import {
 } from "./storage.service.js";
 
 export async function criarRequisicaoService(
+  usuarioLogado: { id: string; role: Role },
   dados: {
     criadoPorId: string;
     cidadeId: string;
@@ -33,6 +34,8 @@ export async function criarRequisicaoService(
 ) {
   let fotoLocalPath: string | null = null;
   let comprovanteResidenciaPath: string | null = null;
+
+  dados.criadoPorId = usuarioLogado.id;
 
   if (arquivos.fotoLocal) {
     const foto = await uploadArquivoSupabase(
@@ -125,7 +128,7 @@ export async function criarRequisicaoService(
 
 export async function atualizarRequisicaoService(
   id: string,
-  usuarioLogado: { id: string },
+  usuarioLogado: { id: string; role: Role },
   dados: {
     criadoPorId: string;
     cidadeId: string;
@@ -148,6 +151,8 @@ export async function atualizarRequisicaoService(
   }
 ) {
 
+  dados.criadoPorId = usuarioLogado.id;
+
   //BUSCAR REQUISIÇÃO ATUAL
   const requisicaoAtual = await prisma.requisicao.findUnique({
     where: { id },
@@ -159,6 +164,10 @@ export async function atualizarRequisicaoService(
 
   if (requisicaoAtual.criadoPorId !== usuarioLogado.id) {
     throw new Error("Ação não permitida");
+  }
+
+  if (usuarioLogado.role === Role.CIDADAO && requisicaoAtual.criadoPorId !== usuarioLogado.id) {
+    throw new Error("Acesso negado: você só pode editar suas próprias requisições");
   }
 
   //MANTER OS ARQUIVOS EXISTENTES POR PADRÃO
